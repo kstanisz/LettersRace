@@ -10,6 +10,7 @@ import com.kstanisz.lettersrace.model.WordPosition;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -23,10 +24,15 @@ public class LettersRace {
             {R.id.phrase_2_0, R.id.phrase_2_1, R.id.phrase_2_2, R.id.phrase_2_3, R.id.phrase_2_4, R.id.phrase_2_5, R.id.phrase_2_6, R.id.phrase_2_7, R.id.phrase_2_8, R.id.phrase_2_9, R.id.phrase_2_10, R.id.phrase_2_11, R.id.phrase_2_12},
             {R.id.phrase_3_0, R.id.phrase_3_1, R.id.phrase_3_2, R.id.phrase_3_3, R.id.phrase_3_4, R.id.phrase_3_5, R.id.phrase_3_6, R.id.phrase_3_7, R.id.phrase_3_8, R.id.phrase_3_9, R.id.phrase_3_10, R.id.phrase_3_11, R.id.phrase_3_12}
     };
+
+    private final static int[] CORNER_FIELDS = {R.id.phrase_0_0, R.id.phrase_0_12, R.id.phrase_3_0, R.id.phrase_3_12};
+
     private final BigInteger hash;
 
     private final List<LetterPosition> letters = new ArrayList<>();
     private String text;
+
+    private final Handler timeHandler = new Handler();
     private boolean gameStopped = false;
 
     public LettersRace(MainActivity activity, String roomId) {
@@ -46,8 +52,7 @@ public class LettersRace {
 
         setHiddenLetters(words, positions);
 
-        final Handler h = new Handler();
-        h.postDelayed(new Runnable() {
+        timeHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 if (letters.isEmpty()) {
@@ -56,9 +61,8 @@ public class LettersRace {
 
                 if (!gameStopped) {
                     showOneLetter();
+                    timeHandler.postDelayed(this, 1000);
                 }
-
-                h.postDelayed(this, 1000);
             }
         }, 1000);
     }
@@ -67,18 +71,32 @@ public class LettersRace {
         return letters.size() > 0;
     }
 
-    public void stopGame(){
+    public void stopGame() {
         gameStopped = true;
     }
 
-    public void resumeGame(){
+    public void resumeGame() {
         gameStopped = false;
     }
 
+    public void resetGame() {
+        timeHandler.removeCallbacksAndMessages(null);
+        for (int[] row : PHRASE_FIELDS) {
+            for (int rid : row) {
+                TextView field = activity.findViewById(rid);
+                if (Arrays.asList(CORNER_FIELDS).contains(rid)) {
+                    continue;
+                }
+
+                field.setText("");
+                field.setBackgroundResource(R.drawable.phrase_empty_back);
+            }
+        }
+    }
 
     private Phrase getPhrase() {
-        //return new Phrase("PIERWSZY TEST GRY", "TEST", "1,2;2,2;2,7");
-        return new Phrase("KOCHAM CIĘ PAULINKO", "TEST", "1,1;1,8;2,2");
+        return new Phrase("PIERWSZY TEST GRY", "TEST", "1,2;2,2;2,7");
+        //return new Phrase("KOCHAM CIĘ PAULINKO", "TEST", "1,1;1,8;2,2");
     }
 
     private void showOneLetter() {

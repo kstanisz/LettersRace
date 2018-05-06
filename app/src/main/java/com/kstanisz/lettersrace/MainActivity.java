@@ -19,7 +19,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -47,7 +46,8 @@ import com.kstanisz.lettersrace.communication.MessageType;
 import com.kstanisz.lettersrace.game.LettersRace;
 import org.apache.commons.lang3.SerializationUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends Activity implements View.OnClickListener {
 
@@ -95,9 +95,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
     // invitation listener
     private String incomingInvitationId = null;
 
-    // Message buffer for sending messages
-    private byte[] msgBuf = new byte[2];
-
     private LettersRace lettersRace;
 
     @Override
@@ -142,7 +139,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
             case R.id.button_single_player:
             case R.id.button_single_player_2:
                 // play a single-player game
-                resetGameVars();
+                resetGame();
                 startGame(false);
                 break;
             case R.id.button_sign_in:
@@ -193,11 +190,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 // user wants to play against a random opponent right now
                 startQuickGame();
                 break;
-            case R.id.button_click_me:
-                // (gameplay) user clicked the "click me" button
-                scoreOnePoint();
-                break;
-
             case R.id.button_guess_phrase:
                 guessPhrase();
                 break;
@@ -210,7 +202,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
         Bundle autoMatchCriteria = RoomConfig.createAutoMatchCriteria(MIN_OPPONENTS, MAX_OPPONENTS, 0);
         switchToScreen(R.id.screen_wait);
         keepScreenOn();
-        resetGameVars();
+        resetGame();
 
         roomConfig = RoomConfig.builder(roomUpdateCallback)
                 .setOnMessageReceivedListener(onRealTimeMessageReceivedListener)
@@ -406,7 +398,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
         Log.d(TAG, "Creating room...");
         switchToScreen(R.id.screen_wait);
         keepScreenOn();
-        resetGameVars();
+        resetGame();
 
         roomConfig = RoomConfig.builder(roomUpdateCallback)
                 .addPlayersToInvite(invitees)
@@ -448,7 +440,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
         switchToScreen(R.id.screen_wait);
         keepScreenOn();
-        resetGameVars();
+        resetGame();
 
         realTimeMultiplayerClient.join(roomConfig)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
@@ -488,7 +480,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
     // Leave the room.
     private void leaveRoom() {
         Log.d(TAG, "Leaving room.");
-        mSecondsLeft = 0;
         stopKeepingScreenOn();
         if (roomId != null) {
             realTimeMultiplayerClient.leave(roomConfig, roomId)
@@ -634,6 +625,10 @@ public class MainActivity extends Activity implements View.OnClickListener {
             //get participants and my ID:
             participants = room.getParticipants();
             myId = room.getParticipantId(playerId);
+            String creatorId = room.getCreatorId();
+            if(myId.equals(creatorId)){
+                System.out.println("ZGADZA SIĘ");
+            }
 
             // save room ID if its not initialized in onRoomCreated() so we can leave cleanly before the game starts.
             if (roomId == null) {
@@ -775,82 +770,30 @@ public class MainActivity extends Activity implements View.OnClickListener {
         if (room != null) {
             participants = room.getParticipants();
         }
-        if (participants != null) {
+/*        if (participants != null) {
             updatePeerScoresDisplay();
-        }
+        }*/
     }
 
     /*
      * GAME LOGIC SECTION. Methods that implement the game's rules.
      */
 
-    // Current state of the game:
-    private int mSecondsLeft = -1; // how long until the game ends (seconds)
-    private final static int GAME_DURATION = 20; // game duration, seconds.
-    private int mScore = 0; // user's current score
-
-    // Reset game variables in preparation for a new game.
-    private void resetGameVars() {
-        mSecondsLeft = GAME_DURATION;
-        mScore = 0;
-        mParticipantScore.clear();
-        mFinishedParticipants.clear();
+    // Reset game
+    private void resetGame() {
+        if (lettersRace != null) {
+            lettersRace.resetGame();
+        }
     }
 
     // Start the gameplay phase of the game.
     private void startGame(boolean multiplayer) {
 
         multiplayerMode = multiplayer;
-        updateScoreDisplay();
-        broadcastScore(false);
         switchToScreen(R.id.screen_game);
-
-        findViewById(R.id.button_click_me).setVisibility(View.VISIBLE);
 
         lettersRace = new LettersRace(this, roomId);
         lettersRace.startGame();
-        // run the gameTick() method every second to update the game.
-/*        final Handler h = new Handler();
-        h.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if (mSecondsLeft <= 0) {
-                    return;
-                }
-                gameTick();
-                h.postDelayed(this, 1000);
-            }
-        }, 1000);*/
-    }
-
-    // Game tick -- update countdown, check if game ended.
-    private void gameTick() {
-        if (mSecondsLeft > 0) {
-            --mSecondsLeft;
-        }
-
-        // update countdown
-        ((TextView) findViewById(R.id.countdown)).setText("0:" +
-                (mSecondsLeft < 10 ? "0" : "") + String.valueOf(mSecondsLeft));
-
-        if (mSecondsLeft <= 0) {
-            // finish game
-            findViewById(R.id.button_click_me).setVisibility(View.GONE);
-            broadcastScore(true);
-        }
-    }
-
-    // indicates the player scored one point
-    private void scoreOnePoint() {
-        if (mSecondsLeft <= 0) {
-            return; // too late!
-        }
-        ++mScore;
-        updateScoreDisplay();
-        updatePeerScoresDisplay();
-
-        // broadcast our new score to our peers
-        broadcastScore(false);
     }
 
     private void guessPhrase() {
@@ -868,7 +811,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
         // Send to every other participant.
         for (Participant p : participants) {
-            if(myId.equals(p.getParticipantId())){
+            if (myId.equals(p.getParticipantId())) {
                 lettersRace.stopGame();
             }
 
@@ -900,142 +843,46 @@ public class MainActivity extends Activity implements View.OnClickListener {
      * protocol.
      */
 
-    // Score of other participants. We update this as we receive their scores
-    // from the network.
-    Map<String, Integer> mParticipantScore = new HashMap<>();
-
-    // Participants who sent us their final score.
-    Set<String> mFinishedParticipants = new HashSet<>();
-
-    // Called when we receive a real-time message from the network.
-    // Messages in our game are made up of 2 bytes: the first one is 'F' or 'U'
-    // indicating
-    // whether it's a final or interim score. The second byte is the score.
-    // There is also the
-    // 'S' message, which indicates that the game should start.
-    OnRealTimeMessageReceivedListener onRealTimeMessageReceivedListener = new OnRealTimeMessageReceivedListener() {
+    private OnRealTimeMessageReceivedListener onRealTimeMessageReceivedListener = new OnRealTimeMessageReceivedListener() {
         @Override
         public void onRealTimeMessageReceived(@NonNull RealTimeMessage realTimeMessage) {
             byte[] buf = realTimeMessage.getMessageData();
             Object receivedMessage = SerializationUtils.deserialize(buf);
-            if(receivedMessage instanceof Message){
-                Message message = (Message) receivedMessage;
-                MessageType messageType = message.getType();
-                switch(messageType){
-                    case GUESS_STARTED:{
-                        lettersRace.stopGame();
-                        Button guessPhraseButton = findViewById(R.id.button_guess_phrase);
-                        guessPhraseButton.setVisibility(View.GONE);
-                        TextView guessInfoTextView = findViewById(R.id.guess_info);
-                        guessInfoTextView.setText("Paulinka odgaduje hasło!");
-                        guessInfoTextView.setVisibility(View.VISIBLE);
-                        break;
-                    }
-                    case GUESS_SUCCESSFUL:{
-                        break;
-                    }
-                    case GUESS_FAILED:{
-                        break;
-                    }
-                }
-                return;
+
+            if (!(receivedMessage instanceof Message)) {
+                throw new RuntimeException("Not recognized message");
             }
-            String sender = realTimeMessage.getSenderParticipantId();
-            Log.d(TAG, "Message received: " + (char) buf[0] + "/" + (int) buf[1]);
 
-            if (buf[0] == 'F' || buf[0] == 'U') {
-                // score update.
-                int existingScore = mParticipantScore.containsKey(sender) ?
-                        mParticipantScore.get(sender) : 0;
-                int thisScore = (int) buf[1];
-                if (thisScore > existingScore) {
-                    // this check is necessary because packets may arrive out of
-                    // order, so we
-                    // should only ever consider the highest score we received, as
-                    // we know in our
-                    // game there is no way to lose points. If there was a way to
-                    // lose points,
-                    // we'd have to add a "serial number" to the packet.
-                    mParticipantScore.put(sender, thisScore);
+            Message message = (Message) receivedMessage;
+            MessageType messageType = message.getType();
+            switch (messageType) {
+                case GUESS_STARTED: {
+                    lettersRace.stopGame();
+                    Button guessPhraseButton = findViewById(R.id.button_guess_phrase);
+                    guessPhraseButton.setVisibility(View.GONE);
+                    TextView guessInfoTextView = findViewById(R.id.guess_info);
+                    guessInfoTextView.setText("Paulinka odgaduje hasło!");
+                    guessInfoTextView.setVisibility(View.VISIBLE);
+                    break;
                 }
-
-                // update the scores on the screen
-                updatePeerScoresDisplay();
-
-                // if it's a final score, mark this participant as having finished
-                // the game
-                if ((char) buf[0] == 'F') {
-                    mFinishedParticipants.add(realTimeMessage.getSenderParticipantId());
+                case GUESS_SUCCESSFUL: {
+                    break;
+                }
+                case GUESS_FAILED: {
+                    break;
                 }
             }
         }
     };
-
-    // Broadcast my score to everybody else.
-    private void broadcastScore(boolean finalScore) {
-        /*if (!multiplayerMode) {
-            // playing single-player mode
-            return;
-        }
-
-        // First byte in message indicates whether it's a final score or not
-        msgBuf[0] = (byte) (finalScore ? 'F' : 'U');
-
-        // Second byte is the score.
-        msgBuf[1] = (byte) mScore;
-
-        // Send to every other participant.
-        for (Participant p : participants) {
-            if (p.getParticipantId().equals(myId)) {
-                continue;
-            }
-            if (p.getStatus() != Participant.STATUS_JOINED) {
-                continue;
-            }
-            if (finalScore) {
-                // final score notification must be sent via reliable message
-                realTimeMultiplayerClient.sendReliableMessage(msgBuf,
-                        roomId, p.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
-                            @Override
-                            public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
-                                Log.d(TAG, "RealTime message sent");
-                                Log.d(TAG, "  statusCode: " + statusCode);
-                                Log.d(TAG, "  tokenId: " + tokenId);
-                                Log.d(TAG, "  recipientParticipantId: " + recipientParticipantId);
-                            }
-                        })
-                        .addOnSuccessListener(new OnSuccessListener<Integer>() {
-                            @Override
-                            public void onSuccess(Integer tokenId) {
-                                Log.d(TAG, "Created a reliable message with tokenId: " + tokenId);
-                            }
-                        });
-            } else {
-                // it's an interim score notification, so we can use unreliable
-                realTimeMultiplayerClient.sendUnreliableMessage(msgBuf, roomId,
-                        p.getParticipantId());
-            }
-        }*/
-    }
 
     /*
      * UI SECTION. Methods that implement the game's UI.
      */
 
-    // This array lists everything that's clickable, so we can install click
-    // event handlers.
-
-    private final static int[][] PHRASE_FIELDS = {
-            {R.id.phrase_0_0, R.id.phrase_0_1, R.id.phrase_0_2, R.id.phrase_0_3, R.id.phrase_0_4, R.id.phrase_0_5, R.id.phrase_0_6, R.id.phrase_0_7, R.id.phrase_0_8, R.id.phrase_0_9, R.id.phrase_0_10, R.id.phrase_0_11, R.id.phrase_0_12},
-            {R.id.phrase_1_0, R.id.phrase_1_1, R.id.phrase_1_2, R.id.phrase_1_3, R.id.phrase_1_4, R.id.phrase_1_5, R.id.phrase_1_6, R.id.phrase_1_7, R.id.phrase_1_8, R.id.phrase_1_9, R.id.phrase_1_10, R.id.phrase_1_11, R.id.phrase_1_12},
-            {R.id.phrase_2_0, R.id.phrase_2_1, R.id.phrase_2_2, R.id.phrase_2_3, R.id.phrase_2_4, R.id.phrase_2_5, R.id.phrase_2_6, R.id.phrase_2_7, R.id.phrase_2_8, R.id.phrase_2_9, R.id.phrase_2_10, R.id.phrase_2_11, R.id.phrase_2_12},
-            {R.id.phrase_3_0, R.id.phrase_3_1, R.id.phrase_3_2, R.id.phrase_3_3, R.id.phrase_3_4, R.id.phrase_3_5, R.id.phrase_3_6, R.id.phrase_3_7, R.id.phrase_3_8, R.id.phrase_3_9, R.id.phrase_3_10, R.id.phrase_3_11, R.id.phrase_3_12}
-    };
-
     private final static int[] CLICKABLES = {
             R.id.button_accept_popup_invitation, R.id.button_invite_players,
             R.id.button_quick_game, R.id.button_see_invitations, R.id.button_sign_in,
-            R.id.button_sign_out, R.id.button_click_me, R.id.button_single_player,
+            R.id.button_sign_out, R.id.button_single_player,
             R.id.button_single_player_2, R.id.button_guess_phrase
     };
 
@@ -1073,52 +920,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
             switchToScreen(R.id.screen_main);
         } else {
             switchToScreen(R.id.screen_sign_in);
-        }
-    }
-
-    // updates the label that shows my score
-    private void updateScoreDisplay() {
-        //((TextView) findViewById(R.id.my_score)).setText(formatScore(mScore));
-        ((TextView) findViewById(R.id.my_score)).setText(roomId);
-
-    }
-
-    // formats a score as a three-digit number
-    private String formatScore(int i) {
-        if (i < 0) {
-            i = 0;
-        }
-        String s = String.valueOf(i);
-        return s.length() == 1 ? "00" + s : s.length() == 2 ? "0" + s : s;
-    }
-
-    // updates the screen with the scores from our peers
-    private void updatePeerScoresDisplay() {
-        ((TextView) findViewById(R.id.score0)).setText(
-                getString(R.string.score_label, formatScore(mScore)));
-        int[] arr = {
-                R.id.score1, R.id.score2, R.id.score3
-        };
-        int i = 0;
-
-        if (roomId != null) {
-            for (Participant p : participants) {
-                String pid = p.getParticipantId();
-                if (pid.equals(myId)) {
-                    continue;
-                }
-                if (p.getStatus() != Participant.STATUS_JOINED) {
-                    continue;
-                }
-                int score = mParticipantScore.containsKey(pid) ? mParticipantScore.get(pid) : 0;
-                ((TextView) findViewById(arr[i])).setText(formatScore(score) + " - " +
-                        p.getDisplayName());
-                ++i;
-            }
-        }
-
-        for (; i < arr.length; ++i) {
-            ((TextView) findViewById(arr[i])).setText("");
         }
     }
 

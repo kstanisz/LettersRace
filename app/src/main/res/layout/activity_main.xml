@@ -75,14 +75,6 @@
 
     <!-- GAMEPLAY SCREEN -->
     <LinearLayout android:id="@+id/screen_game" style="@style/LLScreen">
-        <TextView android:id="@+id/instructions"
-            style="@style/Instructions" android:text="@string/instructions" />
-        <TextView android:id="@+id/my_score" style="@style/ScoreDisplay" />
-        <Button android:id="@+id/button_click_me"
-                style="@style/GameButton"
-                android:text="@string/click_me"
-                android:layout_marginBottom="20dp" />
-        <TextView android:id="@+id/countdown" style="@style/FigureLabel" />
 
         <TableLayout style="@style/PhraseTable">
             <TableRow style="@style/PhraseRow">
@@ -154,11 +146,5 @@
             <TextView android:id="@+id/guess_info" style="@style/GuessInfo"/>
         </LinearLayout>
 
-        <LinearLayout style="@style/ScoresBox">
-            <TextView android:id="@+id/score0" style="@style/ScoreText" />
-            <TextView android:id="@+id/score1" style="@style/ScoreText" />
-            <TextView android:id="@+id/score2" style="@style/ScoreText" />
-            <TextView android:id="@+id/score3" style="@style/ScoreText" />
-        </LinearLayout>
     </LinearLayout>
 </FrameLayout>
