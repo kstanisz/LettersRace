@@ -1,6 +1,8 @@
 package com.kstanisz.lettersrace.game;
 
 import android.os.Handler;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import com.kstanisz.lettersrace.MainActivity;
 import com.kstanisz.lettersrace.R;
@@ -10,7 +12,6 @@ import com.kstanisz.lettersrace.model.WordPosition;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -24,8 +25,6 @@ public class LettersRace {
             {R.id.phrase_2_0, R.id.phrase_2_1, R.id.phrase_2_2, R.id.phrase_2_3, R.id.phrase_2_4, R.id.phrase_2_5, R.id.phrase_2_6, R.id.phrase_2_7, R.id.phrase_2_8, R.id.phrase_2_9, R.id.phrase_2_10, R.id.phrase_2_11, R.id.phrase_2_12},
             {R.id.phrase_3_0, R.id.phrase_3_1, R.id.phrase_3_2, R.id.phrase_3_3, R.id.phrase_3_4, R.id.phrase_3_5, R.id.phrase_3_6, R.id.phrase_3_7, R.id.phrase_3_8, R.id.phrase_3_9, R.id.phrase_3_10, R.id.phrase_3_11, R.id.phrase_3_12}
     };
-
-    private final static int[] CORNER_FIELDS = {R.id.phrase_0_0, R.id.phrase_0_12, R.id.phrase_3_0, R.id.phrase_3_12};
 
     private final BigInteger hash;
 
@@ -52,6 +51,10 @@ public class LettersRace {
 
         setHiddenLetters(words, positions);
 
+        runLetters();
+    }
+
+    private void runLetters(){
         timeHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -64,7 +67,7 @@ public class LettersRace {
                     timeHandler.postDelayed(this, 1000);
                 }
             }
-        }, 1000);
+        }, 1500);
     }
 
     public boolean canUserGuess() {
@@ -75,23 +78,41 @@ public class LettersRace {
         gameStopped = true;
     }
 
+    public void startGuessing(){
+        stopGame();
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            public void run() {
+                activity.resumeGame();
+            }
+        }, 10000);
+    }
+
     public void resumeGame() {
         gameStopped = false;
+        runLetters();
     }
 
     public void resetGame() {
         timeHandler.removeCallbacksAndMessages(null);
         for (int[] row : PHRASE_FIELDS) {
             for (int rid : row) {
-                TextView field = activity.findViewById(rid);
-                if (Arrays.asList(CORNER_FIELDS).contains(rid)) {
+                if (rid == R.id.phrase_0_0 || rid == R.id.phrase_0_12 || rid == R.id.phrase_3_0 || rid == R.id.phrase_3_12) {
                     continue;
                 }
 
+                TextView field = activity.findViewById(rid);
                 field.setText("");
                 field.setBackgroundResource(R.drawable.phrase_empty_back);
             }
         }
+
+        TextView guessInfo = activity.findViewById(R.id.guess_info);
+        guessInfo.setText("");
+        guessInfo.setVisibility(View.GONE);
+
+        Button guessButton = activity.findViewById(R.id.button_guess_phrase);
+        guessButton.setVisibility(View.VISIBLE);
     }
 
     private Phrase getPhrase() {

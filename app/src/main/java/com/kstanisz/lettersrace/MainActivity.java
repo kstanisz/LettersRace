@@ -644,9 +644,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
         // Called when we get disconnected from the room. We return to the main screen.
         @Override
         public void onDisconnectedFromRoom(Room room) {
-            roomId = null;
-            roomConfig = null;
-            showGameError();
+            updateRoom(room);
         }
 
 
@@ -802,7 +800,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
         }
 
         if (!multiplayerMode) {
-            lettersRace.stopGame();
+            lettersRace.startGuessing();
             return;
         }
 
@@ -812,7 +810,45 @@ public class MainActivity extends Activity implements View.OnClickListener {
         // Send to every other participant.
         for (Participant p : participants) {
             if (myId.equals(p.getParticipantId())) {
-                lettersRace.stopGame();
+                lettersRace.startGuessing();
+            }
+
+            if (p.getStatus() != Participant.STATUS_JOINED) {
+                continue;
+            }
+            // final score notification must be sent via reliable message
+            realTimeMultiplayerClient.sendReliableMessage(messageBuff,
+                    roomId, p.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
+                        @Override
+                        public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
+                            Log.d(TAG, "RealTime message sent");
+                            Log.d(TAG, "  statusCode: " + statusCode);
+                            Log.d(TAG, "  tokenId: " + tokenId);
+                            Log.d(TAG, "  recipientParticipantId: " + recipientParticipantId);
+                        }
+                    })
+                    .addOnSuccessListener(new OnSuccessListener<Integer>() {
+                        @Override
+                        public void onSuccess(Integer tokenId) {
+                            Log.d(TAG, "Created a reliable message with tokenId: " + tokenId);
+                        }
+                    });
+        }
+    }
+
+    public void resumeGame(){
+        if (!multiplayerMode) {
+            lettersRace.resumeGame();
+            return;
+        }
+
+        Message message = new Message(myId, MessageType.GUESS_FAILED);
+        byte[] messageBuff = SerializationUtils.serialize(message);
+
+        // Send to every other participant.
+        for (Participant p : participants) {
+            if (myId.equals(p.getParticipantId())) {
+                lettersRace.resumeGame();
             }
 
             if (p.getStatus() != Participant.STATUS_JOINED) {
@@ -869,6 +905,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
                     break;
                 }
                 case GUESS_FAILED: {
+                    lettersRace.resumeGame();
                     break;
                 }
             }
