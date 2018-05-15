@@ -43,8 +43,9 @@
         <item name="android:padding">30dp</item>
     </style>
 
-    <style name="GameplayScreen" parent="@style/LLScreen">
-        <item name="android:gravity">center</item>
+    <style name="GameplayScreen" parent="@style/GameScreen">
+        <item name="android:orientation">vertical</item>
+        <item name="android:padding">5dp</item>
     </style>
 
 
@@ -161,9 +162,10 @@
     </style>
 
     <style name="PhraseTable">
-        <item name="android:gravity">center</item>
-        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">top</item>
+        <item name="android:layout_marginTop">40dp</item>
         <item name="android:layout_marginBottom">20dp</item>
     </style>
 
@@ -173,38 +175,31 @@
         <item name="android:layout_height">wrap_content</item>
     </style>
 
-    <style name="PhraseLetter">
+    <style name="PhraseField">
         <item name="android:gravity">center</item>
         <item name="android:textSize">15sp</item>
+        <item name="android:layout_width">26dp</item>
+        <item name="android:layout_height">26dp</item>
+        <item name="android:layout_column">1</item>
+    </style>
+
+    <style name="PhraseLetter" parent="@style/PhraseField">
         <item name="android:background">@drawable/phrase_letter_back</item>
-        <item name="android:layout_width">22dp</item>
-        <item name="android:layout_height">22dp</item>
-        <item name="android:layout_column">1</item>
     </style>
 
-    <style name="PhraseEmpty">
-        <item name="android:gravity">center</item>
-        <item name="android:textSize">15sp</item>
+    <style name="PhraseEmpty" parent="@style/PhraseField">
         <item name="android:background">@drawable/phrase_empty_back</item>
-        <item name="android:layout_width">22dp</item>
-        <item name="android:layout_height">22dp</item>
-        <item name="android:layout_column">1</item>
     </style>
 
-    <style name="PhraseCorner">
-        <item name="android:gravity">center</item>
-        <item name="android:textSize">15sp</item>
-        <item name="android:layout_width">22dp</item>
-        <item name="android:layout_height">22dp</item>
-        <item name="android:layout_column">1</item>
+    <style name="PhraseCorner" parent="@style/PhraseField">
     </style>
 
     <style name="GuessLayout">
         <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:gravity">center</item>
-        <item name="android:layout_marginTop">30dp</item>
-        <item name="android:padding">20dp</item>
+        <item name="android:layout_height">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:gravity">top|center_horizontal</item>
+        <item name="android:padding">5dp</item>
     </style>
 
     <style name="GuessInfo">
@@ -213,6 +208,80 @@
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:visibility">gone</item>
+    </style>
+
+    <style name="KeysTable">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:visibility">gone</item>
+    </style>
+
+    <style name="KeysRow">
+        <item name="android:gravity">center</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+    </style>
+
+    <style name="KeyButton">
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:layout_width">32dp</item>
+        <item name="android:layout_height">32dp</item>
+        <item name="android:layout_margin">3dp</item>
+    </style>
+
+    <style name="Key" parent="@style/KeyButton">
+        <item name="android:background">@drawable/phrase_letter_back</item>
+    </style>
+
+    <style name="KeyCorner" parent="@style/KeyButton">
+        <item name="android:background">@drawable/phrase_empty_back</item>
+    </style>
+
+    <style name="KeyButtonsTable">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:layout_marginTop">10dp</item>
+        <item name="android:layout_marginBottom">10dp</item>
+    </style>
+
+    <style name="KeyButtonsRow">
+        <item name="android:gravity">center</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+    </style>
+
+    <style name="GuesPhrase" parent="GameButton">
+        <item name="android:layout_width">150dp</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <style name="GuessConfirm">
+        <item name="android:layout_width">100dp</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginRight">5dp</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <style name="GuessCancel">
+        <item name="android:layout_width">100dp</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginLeft">5dp</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <style name="GuessTimer">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/AccentColor</item>
+        <item name="android:layout_marginTop">10dp</item>
+        <item name="android:layout_marginBottom">10dp</item>
     </style>
 
 </resources>

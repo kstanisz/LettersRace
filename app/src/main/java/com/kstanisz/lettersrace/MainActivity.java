@@ -134,8 +134,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
     }
 
     @Override
-    public void onClick(View v) {
-        switch (v.getId()) {
+    public void onClick(View view) {
+        switch (view.getId()) {
             case R.id.button_single_player:
             case R.id.button_single_player_2:
                 // play a single-player game
@@ -191,7 +191,18 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 startQuickGame();
                 break;
             case R.id.button_guess_phrase:
-                guessPhrase();
+                sendGuessStartedMessage();
+                break;
+            case R.id.button_guess_confirm:
+                lettersRace.confirmGuess();
+                break;
+            case R.id.button_guess_cancel:
+                lettersRace.cancelGuess();
+                break;
+            default:
+                Button button = (Button) view;
+                String letter = button.getText().toString();
+                lettersRace.letterPressed(letter);
                 break;
         }
     }
@@ -777,16 +788,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
      * GAME LOGIC SECTION. Methods that implement the game's rules.
      */
 
-    // Reset game
-    private void resetGame() {
-        if (lettersRace != null) {
-            lettersRace.resetGame();
-        }
-    }
-
     // Start the gameplay phase of the game.
     private void startGame(boolean multiplayer) {
-
         multiplayerMode = multiplayer;
         switchToScreen(R.id.screen_game);
 
@@ -794,83 +797,10 @@ public class MainActivity extends Activity implements View.OnClickListener {
         lettersRace.startGame();
     }
 
-    private void guessPhrase() {
-        if (!lettersRace.canUserGuess()) {
-            return;
-        }
-
-        if (!multiplayerMode) {
-            lettersRace.startGuessing();
-            return;
-        }
-
-        Message message = new Message(myId, MessageType.GUESS_STARTED);
-        byte[] messageBuff = SerializationUtils.serialize(message);
-
-        // Send to every other participant.
-        for (Participant p : participants) {
-            if (myId.equals(p.getParticipantId())) {
-                lettersRace.startGuessing();
-            }
-
-            if (p.getStatus() != Participant.STATUS_JOINED) {
-                continue;
-            }
-            // final score notification must be sent via reliable message
-            realTimeMultiplayerClient.sendReliableMessage(messageBuff,
-                    roomId, p.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
-                        @Override
-                        public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
-                            Log.d(TAG, "RealTime message sent");
-                            Log.d(TAG, "  statusCode: " + statusCode);
-                            Log.d(TAG, "  tokenId: " + tokenId);
-                            Log.d(TAG, "  recipientParticipantId: " + recipientParticipantId);
-                        }
-                    })
-                    .addOnSuccessListener(new OnSuccessListener<Integer>() {
-                        @Override
-                        public void onSuccess(Integer tokenId) {
-                            Log.d(TAG, "Created a reliable message with tokenId: " + tokenId);
-                        }
-                    });
-        }
-    }
-
-    public void resumeGame(){
-        if (!multiplayerMode) {
-            lettersRace.resumeGame();
-            return;
-        }
-
-        Message message = new Message(myId, MessageType.GUESS_FAILED);
-        byte[] messageBuff = SerializationUtils.serialize(message);
-
-        // Send to every other participant.
-        for (Participant p : participants) {
-            if (myId.equals(p.getParticipantId())) {
-                lettersRace.resumeGame();
-            }
-
-            if (p.getStatus() != Participant.STATUS_JOINED) {
-                continue;
-            }
-            // final score notification must be sent via reliable message
-            realTimeMultiplayerClient.sendReliableMessage(messageBuff,
-                    roomId, p.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
-                        @Override
-                        public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
-                            Log.d(TAG, "RealTime message sent");
-                            Log.d(TAG, "  statusCode: " + statusCode);
-                            Log.d(TAG, "  tokenId: " + tokenId);
-                            Log.d(TAG, "  recipientParticipantId: " + recipientParticipantId);
-                        }
-                    })
-                    .addOnSuccessListener(new OnSuccessListener<Integer>() {
-                        @Override
-                        public void onSuccess(Integer tokenId) {
-                            Log.d(TAG, "Created a reliable message with tokenId: " + tokenId);
-                        }
-                    });
+    // Reset game
+    private void resetGame() {
+        if (lettersRace != null) {
+            lettersRace.resetGame();
         }
     }
 
@@ -893,24 +823,97 @@ public class MainActivity extends Activity implements View.OnClickListener {
             MessageType messageType = message.getType();
             switch (messageType) {
                 case GUESS_STARTED: {
-                    lettersRace.stopGame();
-                    Button guessPhraseButton = findViewById(R.id.button_guess_phrase);
-                    guessPhraseButton.setVisibility(View.GONE);
-                    TextView guessInfoTextView = findViewById(R.id.guess_info);
-                    guessInfoTextView.setText("Paulinka odgaduje hasło!");
-                    guessInfoTextView.setVisibility(View.VISIBLE);
+                    receiveGuessStartedMessage();
                     break;
                 }
-                case GUESS_SUCCESSFUL: {
+                case GUESS_SUCCEEDED: {
                     break;
                 }
                 case GUESS_FAILED: {
-                    lettersRace.resumeGame();
+                    receiveGuessFailedMessage();
                     break;
                 }
             }
         }
     };
+
+    private void sendGuessStartedMessage() {
+        if (!lettersRace.canUserGuess()) {
+            return;
+        }
+
+        if (!multiplayerMode) {
+            lettersRace.startGuessing();
+            return;
+        }
+
+        Message message = new Message(MessageType.GUESS_STARTED);
+        byte[] messageBuff = SerializationUtils.serialize(message);
+
+        // Send to every other participant.
+        for (Participant p : participants) {
+            if (myId.equals(p.getParticipantId())) {
+                lettersRace.startGuessing();
+            }
+            sendMessage(messageBuff, p);
+        }
+    }
+
+    private void receiveGuessStartedMessage(){
+        lettersRace.stopGame();
+
+        Button guessPhraseButton = findViewById(R.id.button_guess_phrase);
+        guessPhraseButton.setVisibility(View.GONE);
+        TextView guessInfoTextView = findViewById(R.id.guess_info);
+        guessInfoTextView.setText("Paulinka odgaduje hasło!");
+        guessInfoTextView.setVisibility(View.VISIBLE);
+    }
+
+    public void sendGuessFailedMessage(){
+        if (!multiplayerMode) {
+            lettersRace.resumeGame();
+            return;
+        }
+
+        Message message = new Message(MessageType.GUESS_FAILED);
+        byte[] messageBuff = SerializationUtils.serialize(message);
+
+        // Send to every other participant.
+        for (Participant p : participants) {
+            if (myId.equals(p.getParticipantId())) {
+                lettersRace.resumeGame();
+            }
+
+            sendMessage(messageBuff, p);
+        }
+    }
+
+    private void receiveGuessFailedMessage(){
+        lettersRace.resumeGame();
+    }
+
+    private void sendMessage(byte[] buffer, Participant participant){
+        if (participant.getStatus() != Participant.STATUS_JOINED) {
+            return;
+        }
+        // final score notification must be sent via reliable message
+        realTimeMultiplayerClient.sendReliableMessage(buffer,
+                roomId, participant.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
+                    @Override
+                    public void onRealTimeMessageSent(int statusCode, int tokenId, String recipientParticipantId) {
+                        Log.d(TAG, "RealTime message sent");
+                        Log.d(TAG, "  statusCode: " + statusCode);
+                        Log.d(TAG, "  tokenId: " + tokenId);
+                        Log.d(TAG, "  recipientParticipantId: " + recipientParticipantId);
+                    }
+                })
+                .addOnSuccessListener(new OnSuccessListener<Integer>() {
+                    @Override
+                    public void onSuccess(Integer tokenId) {
+                        Log.d(TAG, "Created a reliable message with tokenId: " + tokenId);
+                    }
+                });
+    }
 
     /*
      * UI SECTION. Methods that implement the game's UI.
@@ -920,7 +923,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
             R.id.button_accept_popup_invitation, R.id.button_invite_players,
             R.id.button_quick_game, R.id.button_see_invitations, R.id.button_sign_in,
             R.id.button_sign_out, R.id.button_single_player,
-            R.id.button_single_player_2, R.id.button_guess_phrase
+            R.id.button_single_player_2, R.id.button_guess_phrase, R.id.button_guess_confirm, R.id.button_guess_cancel
     };
 
     // This array lists all the individual screens our game has.

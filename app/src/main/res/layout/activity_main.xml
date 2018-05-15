@@ -15,10 +15,11 @@
    limitations under the License.
 -->
 
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent" >
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
     <!-- SIGN-IN SCREEN -->
     <LinearLayout android:id="@+id/screen_sign_in" style="@style/LLScreen">
@@ -74,7 +75,9 @@
     </LinearLayout>
 
     <!-- GAMEPLAY SCREEN -->
-    <LinearLayout android:id="@+id/screen_game" style="@style/LLScreen">
+    <LinearLayout android:id="@+id/screen_game" style="@style/GameplayScreen">
+
+        <TextView android:id="@+id/guess_timer" android:text="Timer" style="@style/GuessTimer"/>
 
         <TableLayout style="@style/PhraseTable">
             <TableRow style="@style/PhraseRow">
@@ -141,10 +144,61 @@
 
         <LinearLayout style="@style/GuessLayout">
             <Button android:id="@+id/button_guess_phrase"
-                    style="@style/GameButton"
+                    style="@style/GuesPhrase"
                     android:text="@string/guess_phrase"/>
             <TextView android:id="@+id/guess_info" style="@style/GuessInfo"/>
         </LinearLayout>
 
+        <LinearLayout android:id="@+id/keys_table" style="@style/KeysTable">
+            <LinearLayout style="@style/KeysRow">
+                <Button android:id="@+id/key_0_1" style="@style/Key" android:text="A" android:onClick="onClick"/>
+                <Button android:id="@+id/key_0_2" style="@style/Key" android:text="Ą" android:onClick="onClick"/>
+                <Button android:id="@+id/key_0_3" style="@style/Key" android:text="B" android:onClick="onClick"/>
+                <Button android:id="@+id/key_0_4" style="@style/Key" android:text="C" android:onClick="onClick"/>
+                <Button android:id="@+id/key_0_5" style="@style/Key" android:text="Ć" android:onClick="onClick"/>
+                <Button android:id="@+id/key_0_6" style="@style/Key" android:text="D" android:onClick="onClick"/>
+                <Button android:id="@+id/key_0_7" style="@style/Key" android:text="E" android:onClick="onClick"/>
+                <Button android:id="@+id/key_0_8" style="@style/Key" android:text="Ę" android:onClick="onClick"/>
+            </LinearLayout>
+            <LinearLayout style="@style/KeysRow">
+                <Button android:id="@+id/key_1_0" style="@style/Key" android:text="F" android:onClick="onClick"/>
+                <Button android:id="@+id/key_1_1" style="@style/Key" android:text="G" android:onClick="onClick"/>
+                <Button android:id="@+id/key_1_2" style="@style/Key" android:text="H" android:onClick="onClick"/>
+                <Button android:id="@+id/key_1_3" style="@style/Key" android:text="I" android:onClick="onClick"/>
+                <Button android:id="@+id/key_1_4" style="@style/Key" android:text="J" android:onClick="onClick"/>
+                <Button android:id="@+id/key_1_5" style="@style/Key" android:text="K" android:onClick="onClick"/>
+                <Button android:id="@+id/key_1_6" style="@style/Key" android:text="L" android:onClick="onClick"/>
+                <Button android:id="@+id/key_1_7" style="@style/Key" android:text="Ł" android:onClick="onClick"/>
+                <Button android:id="@+id/key_1_8" style="@style/Key" android:text="M" android:onClick="onClick"/>
+            </LinearLayout>
+            <LinearLayout style="@style/KeysRow">
+                <Button android:id="@+id/key_2_0" style="@style/Key" android:text="N" android:onClick="onClick"/>
+                <Button android:id="@+id/key_2_1" style="@style/Key" android:text="Ń" android:onClick="onClick"/>
+                <Button android:id="@+id/key_2_2" style="@style/Key" android:text="O" android:onClick="onClick"/>
+                <Button android:id="@+id/key_2_3" style="@style/Key" android:text="Ó" android:onClick="onClick"/>
+                <Button android:id="@+id/key_2_4" style="@style/Key" android:text="P" android:onClick="onClick"/>
+                <Button android:id="@+id/key_2_5" style="@style/Key" android:text="R" android:onClick="onClick"/>
+                <Button android:id="@+id/key_2_6" style="@style/Key" android:text="S" android:onClick="onClick"/>
+                <Button android:id="@+id/key_2_7" style="@style/Key" android:text="Ś" android:onClick="onClick"/>
+                <Button android:id="@+id/key_2_8" style="@style/Key" android:text="T" android:onClick="onClick"/>
+            </LinearLayout>
+            <LinearLayout style="@style/KeysRow">
+                <Button android:id="@+id/key_3_1" style="@style/Key" android:text="U" android:onClick="onClick"/>
+                <Button android:id="@+id/key_3_2" style="@style/Key" android:text="W" android:onClick="onClick"/>
+                <Button android:id="@+id/key_3_3" style="@style/Key" android:text="Y" android:onClick="onClick"/>
+                <Button android:id="@+id/key_3_4" style="@style/Key" android:text="Z" android:onClick="onClick"/>
+                <Button android:id="@+id/key_3_5" style="@style/Key" android:text="Ź" android:onClick="onClick"/>
+                <Button android:id="@+id/key_3_6" style="@style/Key" android:text="Ż" android:onClick="onClick"/>
+                <Button android:id="@+id/key_3_7" style="@style/Key" android:text="BCK" android:onClick="onClick"/>
+            </LinearLayout>
+
+            <TableLayout style="@style/KeyButtonsTable">
+                <TableRow style="@style/KeyButtonsRow">
+                    <Button android:id="@+id/button_guess_confirm" style="@style/GuessConfirm" android:text="Zatwierdź"/>
+                    <Button android:id="@+id/button_guess_cancel" style="@style/GuessCancel" android:text="Anuluj"/>
+                </TableRow>
+            </TableLayout>
+
+        </LinearLayout>
     </LinearLayout>
-</FrameLayout>
+</LinearLayout>
