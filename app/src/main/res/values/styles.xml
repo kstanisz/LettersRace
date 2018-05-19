@@ -45,7 +45,6 @@
 
     <style name="GameplayScreen" parent="@style/GameScreen">
         <item name="android:orientation">vertical</item>
-        <item name="android:padding">5dp</item>
     </style>
 
 
@@ -80,13 +79,13 @@
     </style>
 
     <style name="SignInButton">
-        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_width">200dp</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_marginTop">40dp</item>
     </style>
 
     <style name="GameButton">
-        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_width">200dp</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:background">@color/AccentColor</item>
         <item name="android:textColor">@color/ButtonTextColor</item>
@@ -165,7 +164,7 @@
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:gravity">top</item>
-        <item name="android:layout_marginTop">40dp</item>
+        <item name="android:layout_marginTop">10dp</item>
         <item name="android:layout_marginBottom">20dp</item>
     </style>
 
@@ -179,7 +178,7 @@
         <item name="android:gravity">center</item>
         <item name="android:textSize">15sp</item>
         <item name="android:layout_width">26dp</item>
-        <item name="android:layout_height">26dp</item>
+        <item name="android:layout_height">32dp</item>
         <item name="android:layout_column">1</item>
     </style>
 
@@ -199,7 +198,8 @@
         <item name="android:layout_height">0dp</item>
         <item name="android:layout_weight">1</item>
         <item name="android:gravity">top|center_horizontal</item>
-        <item name="android:padding">5dp</item>
+        <item name="android:layout_marginTop">20dp</item>
+        <item name="android:padding">30dp</item>
     </style>
 
     <style name="GuessInfo">
@@ -215,6 +215,7 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:gravity">center_horizontal</item>
         <item name="android:orientation">vertical</item>
+        <item name="android:paddingBottom">10dp</item>
         <item name="android:visibility">gone</item>
     </style>
 
@@ -228,7 +229,7 @@
         <item name="android:gravity">center</item>
         <item name="android:textSize">15sp</item>
         <item name="android:layout_width">32dp</item>
-        <item name="android:layout_height">32dp</item>
+        <item name="android:layout_height">40dp</item>
         <item name="android:layout_margin">3dp</item>
     </style>
 
@@ -255,9 +256,10 @@
         <item name="android:layout_height">wrap_content</item>
     </style>
 
-    <style name="GuesPhrase" parent="GameButton">
+    <style name="GuessPhrase" parent="GameButton">
         <item name="android:layout_width">150dp</item>
         <item name="android:gravity">center</item>
+        <item name="android:background">#00cc00</item>
     </style>
 
     <style name="GuessConfirm">
@@ -284,6 +286,13 @@
         <item name="android:layout_marginBottom">10dp</item>
     </style>
 
+    <style name="PhraseCategory">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:layout_marginTop">40dp</item>
+    </style>
+
     <style name="GameOverPanel">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
@@ -307,13 +316,26 @@
         <item name="android:layout_height">wrap_content</item>
     </style>
 
-    <style name="GameOverText" parent="GameButton">
-        <item name="android:layout_width">150dp</item>
+    <style name="GameOverTextMain">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">30sp</item>
         <item name="android:gravity">center</item>
+        <item name="android:layout_marginTop">10dp</item>
+        <item name="android:layout_marginBottom">10dp</item>
+    </style>
+
+    <style name="GameOverTextBlurb">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:layout_marginTop">10dp</item>
+        <item name="android:layout_marginBottom">10dp</item>
     </style>
 
     <style name="PlayAgain">
-        <item name="android:layout_width">100dp</item>
+        <item name="android:layout_width">150dp</item>
         <item name="android:textSize">15sp</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_marginRight">5dp</item>
@@ -321,7 +343,7 @@
     </style>
 
     <style name="LeaveGame">
-        <item name="android:layout_width">100dp</item>
+        <item name="android:layout_width">150dp</item>
         <item name="android:textSize">15sp</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_marginLeft">5dp</item>

@@ -51,7 +51,7 @@ import org.apache.commons.lang3.SerializationUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends Activity implements View.OnClickListener {
+public class MainActivity extends Activity implements View.OnClickListener{
 
     /*
      * API INTEGRATION SECTION. This section contains the code that integrates
@@ -84,9 +84,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
     // Holds the configuration of the current room.
     private RoomConfig roomConfig;
 
-    // Are we playing in multiplayer mode?
-    private boolean multiplayerMode = false;
-
+    // Game mode
+    private boolean multiplayerMode;
     private GameMode gameMode;
 
     // The participants in the currently active game
@@ -108,12 +107,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
         // Create the client used to sign in.
         googleSignInClient = GoogleSignIn.getClient(this, GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN);
-
-        // set up a click listener for everything we care about
-        for (int id : CLICKABLES) {
-            findViewById(id).setOnClickListener(this);
-        }
-
+        findViewById(R.id.button_sign_in).setOnClickListener(this);
         switchToMainScreen();
     }
 
@@ -138,94 +132,70 @@ public class MainActivity extends Activity implements View.OnClickListener {
     }
 
     @Override
-    public void onClick(View view) {
+    public void onClick(View view){
+        startSignInIntent();
+    }
+
+    public void onMenuClick(View view) {
         switch (view.getId()) {
             case R.id.button_single_player:
             case R.id.button_single_player_2:
-                // play a single-player game
-                gameMode = GameMode.SINGLE_PLAYER;
-                resetGame();
-                startGame(false);
+                Log.d(TAG, "Single player button clicked");
+                startSinglePlayerGame();
                 break;
             case R.id.button_sign_in:
-                // start the sign-in flow
                 Log.d(TAG, "Sign-in button clicked");
                 startSignInIntent();
                 break;
             case R.id.button_sign_out:
-                // user wants to sign out
-                // sign out.
                 Log.d(TAG, "Sign-out button clicked");
                 signOut();
                 switchToScreen(R.id.screen_sign_in);
                 break;
             case R.id.button_invite_players:
-                gameMode = GameMode.MULTIPLAYER_FRIENDS;
-                switchToScreen(R.id.screen_wait);
-
-                // show list of invitable players
-                realTimeMultiplayerClient.getSelectOpponentsIntent(1, 3).addOnSuccessListener(
-                        new OnSuccessListener<Intent>() {
-                            @Override
-                            public void onSuccess(Intent intent) {
-                                startActivityForResult(intent, RC_SELECT_PLAYERS);
-                            }
-                        }
-                ).addOnFailureListener(createFailureListener("There was a problem selecting opponents."));
+                Log.d(TAG, "Invite players button clicked");
+                invitePlayers();
                 break;
             case R.id.button_see_invitations:
-                gameMode = GameMode.MULTIPLAYER_FRIENDS;
-                switchToScreen(R.id.screen_wait);
-
-                // show list of pending invitations
-                invitationsClient.getInvitationInboxIntent().addOnSuccessListener(
-                        new OnSuccessListener<Intent>() {
-                            @Override
-                            public void onSuccess(Intent intent) {
-                                startActivityForResult(intent, RC_INVITATION_INBOX);
-                            }
-                        }
-                ).addOnFailureListener(createFailureListener("There was a problem getting the inbox."));
+                Log.d(TAG, "See invitations button clicked");
+                seeInvitations();
                 break;
             case R.id.button_accept_popup_invitation:
+                Log.d(TAG, "Accept invitation button clicked");
                 gameMode = GameMode.MULTIPLAYER_FRIENDS;
-                // user wants to accept the invitation shown on the invitation popup
-                // (the one we got through the OnInvitationReceivedListener).
                 acceptInviteToRoom(incomingInvitationId);
                 incomingInvitationId = null;
                 break;
             case R.id.button_quick_game:
-                gameMode = GameMode.MULTIPLAYER_RANDOM;
-                // user wants to play against a random opponent right now
+                Log.d(TAG, "Quick game button clicked");
                 startQuickGame();
                 break;
+        }
+    }
+
+    public void onGameScreenClick(View view) {
+        switch (view.getId()) {
             case R.id.button_guess_phrase:
+                Log.d(TAG, "Guess phrase button clicked");
                 sendGuessStartedMessage();
                 break;
             case R.id.button_guess_confirm:
+                Log.d(TAG, "Guess confirm button clicked");
                 lettersRace.confirmGuess();
                 break;
             case R.id.button_guess_cancel:
+                Log.d(TAG, "Guess cancel button clicked");
                 lettersRace.cancelGuess();
                 break;
             case R.id.button_play_again:
+                Log.d(TAG, "Play again button clicked");
                 leaveRoom();
-                switch (gameMode){
+                switch (gameMode) {
                     case SINGLE_PLAYER:
-                        resetGame();
-                        startGame(false);
+                        startSinglePlayerGame();
                         break;
                     case MULTIPLAYER_FRIENDS:
-                        switchToScreen(R.id.screen_wait);
-                        // show list of invitable players
-                        realTimeMultiplayerClient.getSelectOpponentsIntent(1, 3).addOnSuccessListener(
-                                new OnSuccessListener<Intent>() {
-                                    @Override
-                                    public void onSuccess(Intent intent) {
-                                        startActivityForResult(intent, RC_SELECT_PLAYERS);
-                                    }
-                                }
-                        ).addOnFailureListener(createFailureListener("There was a problem selecting opponents."));
+                        invitePlayers();
                         break;
                     case MULTIPLAYER_RANDOM:
                         startQuickGame();
@@ -233,17 +203,28 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 }
                 break;
             case R.id.button_leave_game:
+                Log.d(TAG, "Leave room button clicked");
                 leaveRoom();
-                break;
-            default:
-                Button button = (Button) view;
-                String letter = button.getText().toString();
-                lettersRace.letterPressed(letter);
                 break;
         }
     }
 
+    public void onGameKeyboardClick(View view) {
+        Button button = (Button) view;
+        String letter = button.getText().toString();
+        Log.d(TAG, "Keyboard key: " + letter + " clicked");
+        lettersRace.letterPressed(letter);
+    }
+
+    private void startSinglePlayerGame() {
+        gameMode = GameMode.SINGLE_PLAYER;
+        resetGame();
+        startGame(false);
+    }
+
     private void startQuickGame() {
+        gameMode = GameMode.MULTIPLAYER_RANDOM;
+
         // quick-start a game with 1 randomly selected opponent
         final int MIN_OPPONENTS = 1, MAX_OPPONENTS = 1;
         Bundle autoMatchCriteria = RoomConfig.createAutoMatchCriteria(MIN_OPPONENTS, MAX_OPPONENTS, 0);
@@ -257,6 +238,36 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 .setAutoMatchCriteria(autoMatchCriteria)
                 .build();
         realTimeMultiplayerClient.create(roomConfig);
+    }
+
+    private void invitePlayers() {
+        gameMode = GameMode.MULTIPLAYER_FRIENDS;
+        switchToScreen(R.id.screen_wait);
+
+        // show list of invitable players
+        realTimeMultiplayerClient.getSelectOpponentsIntent(1, 3).addOnSuccessListener(
+                new OnSuccessListener<Intent>() {
+                    @Override
+                    public void onSuccess(Intent intent) {
+                        startActivityForResult(intent, RC_SELECT_PLAYERS);
+                    }
+                }
+        ).addOnFailureListener(createFailureListener("There was a problem selecting opponents."));
+    }
+
+    private void seeInvitations() {
+        gameMode = GameMode.MULTIPLAYER_FRIENDS;
+        switchToScreen(R.id.screen_wait);
+
+        // show list of pending invitations
+        invitationsClient.getInvitationInboxIntent().addOnSuccessListener(
+                new OnSuccessListener<Intent>() {
+                    @Override
+                    public void onSuccess(Intent intent) {
+                        startActivityForResult(intent, RC_INVITATION_INBOX);
+                    }
+                }
+        ).addOnFailureListener(createFailureListener("There was a problem getting the inbox."));
     }
 
     /**
@@ -860,14 +871,17 @@ public class MainActivity extends Activity implements View.OnClickListener {
             MessageType messageType = message.getType();
             switch (messageType) {
                 case GUESS_STARTED: {
+                    Log.d(TAG, "Received guess started message");
                     receiveGuessStartedMessage(senderId);
                     break;
                 }
                 case GUESS_SUCCEEDED: {
+                    Log.d(TAG, "Received guess succeeded message");
                     receiveGuessSucceededMessage(senderId);
                     break;
                 }
                 case GUESS_FAILED: {
+                    Log.d(TAG, "Received guess failed message");
                     receiveGuessFailedMessage(senderId);
                     break;
                 }
@@ -991,14 +1005,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
     /*
      * UI SECTION. Methods that implement the game's UI.
      */
-
-    private final static int[] CLICKABLES = {
-            R.id.button_accept_popup_invitation, R.id.button_invite_players,
-            R.id.button_quick_game, R.id.button_see_invitations, R.id.button_sign_in,
-            R.id.button_sign_out, R.id.button_single_player,
-            R.id.button_single_player_2, R.id.button_guess_phrase, R.id.button_guess_confirm, R.id.button_guess_cancel,
-            R.id.button_play_again, R.id.button_leave_game
-    };
 
     // This array lists all the individual screens our game has.
     private final static int[] SCREENS = {

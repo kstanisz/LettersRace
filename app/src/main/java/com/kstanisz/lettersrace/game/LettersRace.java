@@ -1,5 +1,6 @@
 package com.kstanisz.lettersrace.game;
 
+import android.graphics.Color;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.view.View;
@@ -7,6 +8,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import com.kstanisz.lettersrace.MainActivity;
 import com.kstanisz.lettersrace.R;
+import com.kstanisz.lettersrace.data.PhraseData;
 import com.kstanisz.lettersrace.model.LetterPosition;
 import com.kstanisz.lettersrace.model.Phrase;
 import com.kstanisz.lettersrace.model.WordPosition;
@@ -18,8 +20,6 @@ import java.util.*;
 public class LettersRace {
 
     private MainActivity activity;
-
-    private final static String TAG = "LettersRace";
 
     private final static int[][] PHRASE_FIELDS = {
             {R.id.phrase_0_0, R.id.phrase_0_1, R.id.phrase_0_2, R.id.phrase_0_3, R.id.phrase_0_4, R.id.phrase_0_5, R.id.phrase_0_6, R.id.phrase_0_7, R.id.phrase_0_8, R.id.phrase_0_9, R.id.phrase_0_10, R.id.phrase_0_11, R.id.phrase_0_12},
@@ -44,11 +44,13 @@ public class LettersRace {
     private boolean freezeAfterGuess = false;
 
     private TextView timerField;
+    private TextView categoryField;
     private Button buttonGuessPhrase;
     private TextView guessInfo;
     private View keysTable;
     private View gameOverPanel;
-    private TextView gameOverText;
+    private TextView gameOverTextMain;
+    private TextView gameOverTextBlurb;
 
     private CountDownTimer guessingTimer;
     private CountDownTimer freezeTimer;
@@ -58,11 +60,13 @@ public class LettersRace {
         this.activity = activity;
         this.hash = getHash(roomId);
         this.timerField = activity.findViewById(R.id.guess_timer);
+        this.categoryField = activity.findViewById(R.id.phrase_category);
         this.buttonGuessPhrase = activity.findViewById(R.id.button_guess_phrase);
         this.guessInfo = activity.findViewById(R.id.guess_info);
         this.keysTable = activity.findViewById(R.id.keys_table);
         this.gameOverPanel = activity.findViewById(R.id.game_over_panel);
-        this.gameOverText = activity.findViewById(R.id.game_over_text);
+        this.gameOverTextMain = activity.findViewById(R.id.game_over_text_main);
+        this.gameOverTextBlurb = activity.findViewById(R.id.game_over_text_blurb);
     }
 
     public void startGame() {
@@ -72,8 +76,10 @@ public class LettersRace {
         List<WordPosition> positions = phrase.getPositions();
 
         if (words.size() != positions.size()) {
-            throw new RuntimeException("Error");
+            throw new RuntimeException("Number of words in phrase must be the same as number of their positions.");
         }
+
+        categoryField.setText(phrase.getCategory().toUpperCase());
 
         setHiddenLetters(words, positions);
 
@@ -84,7 +90,7 @@ public class LettersRace {
         runLettersHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                if(letters.isEmpty()){
+                if (letters.isEmpty()) {
                     endGame(false, null);
                     return;
                 }
@@ -125,8 +131,6 @@ public class LettersRace {
             }
 
             public void onFinish() {
-                timerField.setText("");
-                resumeGame();
                 cancelGuess();
             }
         }.start();
@@ -167,6 +171,7 @@ public class LettersRace {
         activity.sendGuessFailedMessage();
 
         freezeAfterGuess = true;
+        buttonGuessPhrase.setBackgroundColor(Color.parseColor("#ff4d4d"));
         freezeTimer = new CountDownTimer(6000, 1000) {
 
             public void onTick(long millisUntilFinished) {
@@ -180,6 +185,7 @@ public class LettersRace {
             public void onFinish() {
                 freezeAfterGuess = false;
                 buttonGuessPhrase.setText("Odgaduję!");
+                buttonGuessPhrase.setBackgroundColor(Color.parseColor("#00cc00"));
             }
         }.start();
     }
@@ -220,41 +226,46 @@ public class LettersRace {
         guessInfo.setVisibility(View.GONE);
 
         buttonGuessPhrase.setVisibility(View.VISIBLE);
+        buttonGuessPhrase.setText("Odgaduję!");
+        buttonGuessPhrase.setBackgroundColor(Color.parseColor("#00cc00"));
 
         keysTable.setVisibility(View.GONE);
         gameOverPanel.setVisibility(View.GONE);
     }
 
-    public void endGame(boolean success, String winnerName){
+    public void endGame(boolean success, String winnerName) {
         buttonGuessPhrase.setVisibility(View.GONE);
         guessInfo.setText("");
 
-        String text;
-        if(success){
-            if(winnerName != null){
-                text = "Wygrałeś!";
-            }else{
-                text = "Udało Ci się odgadnąć hasło!";
+        if (success) {
+            gameOverTextMain.setText("Zwycięstwo!");
+            if (winnerName != null) {
+                if (winnerName.toLowerCase().endsWith("a")) {
+                    gameOverTextBlurb.setText("Jako pierwsza odgadłaś hasło.");
+                } else {
+                    gameOverTextBlurb.setText("Jako pierwszy odgadłeś hasło.");
+                }
+            } else {
+                gameOverTextBlurb.setText("Udało Ci się odgadnąć hasło.\nZdobywasz " + getWinnerScore() + " punktów.");
             }
-        }else{
-            if(winnerName != null){
-                text = "Koniec gry!" + winnerName + " odgadł hasło!";
-            }else{
-                text = "Koniec gry! Nie udało się odgadnąć hasła.";
+        } else {
+            gameOverTextMain.setText("Koniec gry!");
+            if (winnerName != null) {
+                gameOverTextBlurb.setText(winnerName + " odgadł" + (winnerName.toLowerCase().endsWith("a") ? "a" : "") + " hasło.");
+            } else {
+                gameOverTextBlurb.setText("Nie udało Ci się odgadnąć hasła.");
             }
             showAllLetters();
         }
-        gameOverText.setText(text);
         gameOverPanel.setVisibility(View.VISIBLE);
     }
 
     public void letterPressed(String letter) {
-        System.out.println("User pressed: " + letter + " letter");
         if (lettersLeft.isEmpty()) {
             return;
         }
 
-        if (letter.equals("BCK")) {
+        if (letter.equals("\u232b")) {
             removeLastPressedLetter();
             return;
         }
@@ -302,8 +313,8 @@ public class LettersRace {
     }
 
     private Phrase getPhrase() {
-        return new Phrase("PIERWSZY TEST GRY", "TEST", "1,2;2,2;2,7");
-        //return new Phrase("KOCHAM CIĘ PAULINKO", "TEST", "1,1;1,8;2,2");
+        int total = PhraseData.data.size();
+        return PhraseData.data.get(hash.mod(BigInteger.valueOf(total)).intValue());
     }
 
     private void showOneLetter() {
@@ -313,9 +324,9 @@ public class LettersRace {
         field.setText(Character.toString(fullText.charAt(letterToShow.getIndex())));
     }
 
-    private void showAllLetters(){
+    private void showAllLetters() {
         String fullText = phrase.getText();
-        for(LetterPosition letter : letters){
+        for (LetterPosition letter : letters) {
             TextView field = activity.findViewById(letter.getRid());
             field.setText(Character.toString(fullText.charAt(letter.getIndex())));
         }
@@ -337,6 +348,13 @@ public class LettersRace {
             index++;
         }
         allLetters.addAll(letters);
+    }
+
+    private long getWinnerScore() {
+        double allLettersCount = phrase.getText().replace(" ", "").length();
+        double pressedLettersCount = pressedLetters.size();
+
+        return Math.round((pressedLettersCount / allLettersCount) * 100.0);
     }
 
     private BigInteger getHash(String str) {

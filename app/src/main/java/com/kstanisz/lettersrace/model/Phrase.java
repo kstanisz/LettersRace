@@ -1,19 +1,17 @@
 package com.kstanisz.lettersrace.model;
 
-import java.util.ArrayList;
+import com.kstanisz.lettersrace.data.WordPositionHelper;
+
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 public class Phrase {
     private String text;
-    private String category;
-    private String positions;
+    private PhraseCategory category;
 
-    public Phrase(String text, String category, String positions) {
+    public Phrase(String text, PhraseCategory category) {
         this.text = text;
         this.category = category;
-        this.positions = positions;
     }
 
     public String getText() {
@@ -21,27 +19,15 @@ public class Phrase {
     }
 
     public String getCategory() {
-        return category;
+        return category.getName();
     }
 
-    public List<String> getWords(){
+    public List<String> getWords() {
         return Arrays.asList(text.split(" "));
     }
 
     public List<WordPosition> getPositions() {
-        if (positions == null || positions.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<WordPosition> wordPositions = new ArrayList<>();
-        String[] separatedPositions = positions.split(";");
-        for (String position : separatedPositions) {
-            String[] rowColumnPair = position.split(",");
-            int row = Integer.parseInt(rowColumnPair[0]);
-            int column = Integer.parseInt(rowColumnPair[1]);
-            wordPositions.add(new WordPosition(row, column));
-        }
-
-        return wordPositions;
+        WordPositionHelper wordPositionHelper = new WordPositionHelper();
+        return wordPositionHelper.arrange(text);
     }
 }
