@@ -284,4 +284,48 @@
         <item name="android:layout_marginBottom">10dp</item>
     </style>
 
+    <style name="GameOverPanel">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:visibility">gone</item>
+    </style>
+
+    <style name="GameOverButtonsTable">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:layout_marginTop">10dp</item>
+        <item name="android:layout_marginBottom">10dp</item>
+    </style>
+
+    <style name="GameOverButtonsRow">
+        <item name="android:gravity">center</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+    </style>
+
+    <style name="GameOverText" parent="GameButton">
+        <item name="android:layout_width">150dp</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <style name="PlayAgain">
+        <item name="android:layout_width">100dp</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginRight">5dp</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <style name="LeaveGame">
+        <item name="android:layout_width">100dp</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginLeft">5dp</item>
+        <item name="android:gravity">center</item>
+    </style>
+
 </resources>

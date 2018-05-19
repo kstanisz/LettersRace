@@ -26,6 +26,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -43,6 +44,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.kstanisz.lettersrace.communication.Message;
 import com.kstanisz.lettersrace.communication.MessageType;
+import com.kstanisz.lettersrace.game.GameMode;
 import com.kstanisz.lettersrace.game.LettersRace;
 import org.apache.commons.lang3.SerializationUtils;
 
@@ -84,6 +86,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
     // Are we playing in multiplayer mode?
     private boolean multiplayerMode = false;
+
+    private GameMode gameMode;
 
     // The participants in the currently active game
     private ArrayList<Participant> participants = null;
@@ -139,6 +143,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
             case R.id.button_single_player:
             case R.id.button_single_player_2:
                 // play a single-player game
+                gameMode = GameMode.SINGLE_PLAYER;
                 resetGame();
                 startGame(false);
                 break;
@@ -155,6 +160,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 switchToScreen(R.id.screen_sign_in);
                 break;
             case R.id.button_invite_players:
+                gameMode = GameMode.MULTIPLAYER_FRIENDS;
                 switchToScreen(R.id.screen_wait);
 
                 // show list of invitable players
@@ -168,6 +174,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 ).addOnFailureListener(createFailureListener("There was a problem selecting opponents."));
                 break;
             case R.id.button_see_invitations:
+                gameMode = GameMode.MULTIPLAYER_FRIENDS;
                 switchToScreen(R.id.screen_wait);
 
                 // show list of pending invitations
@@ -181,12 +188,14 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 ).addOnFailureListener(createFailureListener("There was a problem getting the inbox."));
                 break;
             case R.id.button_accept_popup_invitation:
+                gameMode = GameMode.MULTIPLAYER_FRIENDS;
                 // user wants to accept the invitation shown on the invitation popup
                 // (the one we got through the OnInvitationReceivedListener).
                 acceptInviteToRoom(incomingInvitationId);
                 incomingInvitationId = null;
                 break;
             case R.id.button_quick_game:
+                gameMode = GameMode.MULTIPLAYER_RANDOM;
                 // user wants to play against a random opponent right now
                 startQuickGame();
                 break;
@@ -198,6 +207,33 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 break;
             case R.id.button_guess_cancel:
                 lettersRace.cancelGuess();
+                break;
+            case R.id.button_play_again:
+                leaveRoom();
+                switch (gameMode){
+                    case SINGLE_PLAYER:
+                        resetGame();
+                        startGame(false);
+                        break;
+                    case MULTIPLAYER_FRIENDS:
+                        switchToScreen(R.id.screen_wait);
+                        // show list of invitable players
+                        realTimeMultiplayerClient.getSelectOpponentsIntent(1, 3).addOnSuccessListener(
+                                new OnSuccessListener<Intent>() {
+                                    @Override
+                                    public void onSuccess(Intent intent) {
+                                        startActivityForResult(intent, RC_SELECT_PLAYERS);
+                                    }
+                                }
+                        ).addOnFailureListener(createFailureListener("There was a problem selecting opponents."));
+                        break;
+                    case MULTIPLAYER_RANDOM:
+                        startQuickGame();
+                        break;
+                }
+                break;
+            case R.id.button_leave_game:
+                leaveRoom();
                 break;
             default:
                 Button button = (Button) view;
@@ -637,7 +673,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
             participants = room.getParticipants();
             myId = room.getParticipantId(playerId);
             String creatorId = room.getCreatorId();
-            if(myId.equals(creatorId)){
+            if (myId.equals(creatorId)) {
                 System.out.println("ZGADZA SIĘ");
             }
 
@@ -813,6 +849,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
         @Override
         public void onRealTimeMessageReceived(@NonNull RealTimeMessage realTimeMessage) {
             byte[] buf = realTimeMessage.getMessageData();
+            String senderId = realTimeMessage.getSenderParticipantId();
             Object receivedMessage = SerializationUtils.deserialize(buf);
 
             if (!(receivedMessage instanceof Message)) {
@@ -823,14 +860,15 @@ public class MainActivity extends Activity implements View.OnClickListener {
             MessageType messageType = message.getType();
             switch (messageType) {
                 case GUESS_STARTED: {
-                    receiveGuessStartedMessage();
+                    receiveGuessStartedMessage(senderId);
                     break;
                 }
                 case GUESS_SUCCEEDED: {
+                    receiveGuessSucceededMessage(senderId);
                     break;
                 }
                 case GUESS_FAILED: {
-                    receiveGuessFailedMessage();
+                    receiveGuessFailedMessage(senderId);
                     break;
                 }
             }
@@ -859,17 +897,19 @@ public class MainActivity extends Activity implements View.OnClickListener {
         }
     }
 
-    private void receiveGuessStartedMessage(){
+    private void receiveGuessStartedMessage(String senderId) {
         lettersRace.stopGame();
 
         Button guessPhraseButton = findViewById(R.id.button_guess_phrase);
         guessPhraseButton.setVisibility(View.GONE);
         TextView guessInfoTextView = findViewById(R.id.guess_info);
-        guessInfoTextView.setText("Paulinka odgaduje hasło!");
+
+        Participant sender = findParticipantById(senderId);
+        guessInfoTextView.setText(sender.getDisplayName() + " odgaduje hasło!");
         guessInfoTextView.setVisibility(View.VISIBLE);
     }
 
-    public void sendGuessFailedMessage(){
+    public void sendGuessFailedMessage() {
         if (!multiplayerMode) {
             lettersRace.resumeGame();
             return;
@@ -888,11 +928,44 @@ public class MainActivity extends Activity implements View.OnClickListener {
         }
     }
 
-    private void receiveGuessFailedMessage(){
+    private void receiveGuessFailedMessage(String senderId) {
+        Button guessPhraseButton = findViewById(R.id.button_guess_phrase);
+        guessPhraseButton.setVisibility(View.VISIBLE);
+        TextView guessInfoTextView = findViewById(R.id.guess_info);
+
+        Participant sender = findParticipantById(senderId);
+        guessInfoTextView.setVisibility(View.GONE);
+
+        Toast.makeText(this, sender.getDisplayName() + " nie odgadł hasła!", Toast.LENGTH_LONG).show();
+
         lettersRace.resumeGame();
     }
 
-    private void sendMessage(byte[] buffer, Participant participant){
+    public void sendGuessSucceededMessage() {
+        if (!multiplayerMode) {
+            lettersRace.endGame(true, null);
+            return;
+        }
+
+        Message message = new Message(MessageType.GUESS_SUCCEEDED);
+        byte[] messageBuff = SerializationUtils.serialize(message);
+
+        // Send to every other participant.
+        for (Participant p : participants) {
+            if (myId.equals(p.getParticipantId())) {
+                lettersRace.endGame(true, p.getDisplayName());
+            }
+
+            sendMessage(messageBuff, p);
+        }
+    }
+
+    private void receiveGuessSucceededMessage(String senderId) {
+        Participant winner = findParticipantById(senderId);
+        lettersRace.endGame(false, winner.getDisplayName());
+    }
+
+    private void sendMessage(byte[] buffer, Participant participant) {
         if (participant.getStatus() != Participant.STATUS_JOINED) {
             return;
         }
@@ -923,7 +996,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
             R.id.button_accept_popup_invitation, R.id.button_invite_players,
             R.id.button_quick_game, R.id.button_see_invitations, R.id.button_sign_in,
             R.id.button_sign_out, R.id.button_single_player,
-            R.id.button_single_player_2, R.id.button_guess_phrase, R.id.button_guess_confirm, R.id.button_guess_cancel
+            R.id.button_single_player_2, R.id.button_guess_phrase, R.id.button_guess_confirm, R.id.button_guess_cancel,
+            R.id.button_play_again, R.id.button_leave_game
     };
 
     // This array lists all the individual screens our game has.
@@ -980,5 +1054,14 @@ public class MainActivity extends Activity implements View.OnClickListener {
     // Clears the flag that keeps the screen on.
     private void stopKeepingScreenOn() {
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    }
+
+    private Participant findParticipantById(String id) {
+        for (Participant participant : participants) {
+            if (id.equals(participant.getParticipantId())) {
+                return participant;
+            }
+        }
+        return null;
     }
 }

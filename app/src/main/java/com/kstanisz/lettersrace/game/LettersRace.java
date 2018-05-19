@@ -45,7 +45,10 @@ public class LettersRace {
 
     private TextView timerField;
     private Button buttonGuessPhrase;
+    private TextView guessInfo;
     private View keysTable;
+    private View gameOverPanel;
+    private TextView gameOverText;
 
     private CountDownTimer guessingTimer;
     private CountDownTimer freezeTimer;
@@ -56,7 +59,10 @@ public class LettersRace {
         this.hash = getHash(roomId);
         this.timerField = activity.findViewById(R.id.guess_timer);
         this.buttonGuessPhrase = activity.findViewById(R.id.button_guess_phrase);
+        this.guessInfo = activity.findViewById(R.id.guess_info);
         this.keysTable = activity.findViewById(R.id.keys_table);
+        this.gameOverPanel = activity.findViewById(R.id.game_over_panel);
+        this.gameOverText = activity.findViewById(R.id.game_over_text);
     }
 
     public void startGame() {
@@ -78,7 +84,11 @@ public class LettersRace {
         runLettersHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                if (letters.isEmpty() || gameStopped) {
+                if(letters.isEmpty()){
+                    endGame(false, null);
+                    return;
+                }
+                if (gameStopped) {
                     return;
                 }
 
@@ -115,7 +125,9 @@ public class LettersRace {
             }
 
             public void onFinish() {
+                timerField.setText("");
                 resumeGame();
+                cancelGuess();
             }
         }.start();
     }
@@ -130,10 +142,10 @@ public class LettersRace {
             return;
         }
 
-        System.out.println("Correct phrase");
-
         keysTable.setVisibility(View.GONE);
         timerField.setText("");
+
+        activity.sendGuessSucceededMessage();
     }
 
     public void cancelGuess() {
@@ -204,15 +216,36 @@ public class LettersRace {
             }
         }
 
-        TextView guessInfo = activity.findViewById(R.id.guess_info);
         guessInfo.setText("");
         guessInfo.setVisibility(View.GONE);
 
-        Button guessButton = activity.findViewById(R.id.button_guess_phrase);
-        guessButton.setVisibility(View.VISIBLE);
+        buttonGuessPhrase.setVisibility(View.VISIBLE);
 
-        View keysTable = activity.findViewById(R.id.keys_table);
         keysTable.setVisibility(View.GONE);
+        gameOverPanel.setVisibility(View.GONE);
+    }
+
+    public void endGame(boolean success, String winnerName){
+        buttonGuessPhrase.setVisibility(View.GONE);
+        guessInfo.setText("");
+
+        String text;
+        if(success){
+            if(winnerName != null){
+                text = "Wygrałeś!";
+            }else{
+                text = "Udało Ci się odgadnąć hasło!";
+            }
+        }else{
+            if(winnerName != null){
+                text = "Koniec gry!" + winnerName + " odgadł hasło!";
+            }else{
+                text = "Koniec gry! Nie udało się odgadnąć hasła.";
+            }
+            showAllLetters();
+        }
+        gameOverText.setText(text);
+        gameOverPanel.setVisibility(View.VISIBLE);
     }
 
     public void letterPressed(String letter) {
@@ -268,7 +301,6 @@ public class LettersRace {
         return true;
     }
 
-
     private Phrase getPhrase() {
         return new Phrase("PIERWSZY TEST GRY", "TEST", "1,2;2,2;2,7");
         //return new Phrase("KOCHAM CIĘ PAULINKO", "TEST", "1,1;1,8;2,2");
@@ -279,6 +311,14 @@ public class LettersRace {
         TextView field = activity.findViewById(letterToShow.getRid());
         String fullText = phrase.getText();
         field.setText(Character.toString(fullText.charAt(letterToShow.getIndex())));
+    }
+
+    private void showAllLetters(){
+        String fullText = phrase.getText();
+        for(LetterPosition letter : letters){
+            TextView field = activity.findViewById(letter.getRid());
+            field.setText(Character.toString(fullText.charAt(letter.getIndex())));
+        }
     }
 
     private void setHiddenLetters(List<String> words, List<WordPosition> positions) {

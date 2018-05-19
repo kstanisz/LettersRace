@@ -77,7 +77,7 @@
     <!-- GAMEPLAY SCREEN -->
     <LinearLayout android:id="@+id/screen_game" style="@style/GameplayScreen">
 
-        <TextView android:id="@+id/guess_timer" android:text="Timer" style="@style/GuessTimer"/>
+        <TextView android:id="@+id/guess_timer" style="@style/GuessTimer"/>
 
         <TableLayout style="@style/PhraseTable">
             <TableRow style="@style/PhraseRow">
@@ -200,5 +200,16 @@
             </TableLayout>
 
         </LinearLayout>
+
+        <LinearLayout android:id="@+id/game_over_panel" style="@style/GameOverPanel">
+            <TextView android:id="@+id/game_over_text" style="@style/GameOverText"/>
+            <TableLayout style="@style/GameOverButtonsTable">
+                <TableRow style="@style/GameOverButtonsRow">
+                    <Button android:id="@+id/button_play_again" style="@style/PlayAgain" android:text="Zagraj jeszcze raz"/>
+                    <Button android:id="@+id/button_leave_game" style="@style/LeaveGame" android:text="Powrót do menu"/>
+                </TableRow>
+            </TableLayout>
+        </LinearLayout>
+
     </LinearLayout>
 </LinearLayout>
