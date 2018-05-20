@@ -3,6 +3,7 @@ package com.kstanisz.lettersrace.game;
 import android.graphics.Color;
 import android.os.CountDownTimer;
 import android.os.Handler;
+import android.support.v4.content.ContextCompat;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -57,6 +58,8 @@ public class LettersRace {
 
 
     public LettersRace(MainActivity activity, String roomId) {
+        System.out.println("Room Id: " + roomId);
+
         this.activity = activity;
         this.hash = getHash(roomId);
         this.timerField = activity.findViewById(R.id.guess_timer);
@@ -171,7 +174,7 @@ public class LettersRace {
         activity.sendGuessFailedMessage();
 
         freezeAfterGuess = true;
-        buttonGuessPhrase.setBackgroundColor(Color.parseColor("#ff4d4d"));
+        buttonGuessPhrase.setBackgroundColor(ContextCompat.getColor(activity, R.color.GuessFreezeColor));
         freezeTimer = new CountDownTimer(6000, 1000) {
 
             public void onTick(long millisUntilFinished) {
@@ -185,7 +188,7 @@ public class LettersRace {
             public void onFinish() {
                 freezeAfterGuess = false;
                 buttonGuessPhrase.setText("Odgaduję!");
-                buttonGuessPhrase.setBackgroundColor(Color.parseColor("#00cc00"));
+                buttonGuessPhrase.setBackgroundColor(ContextCompat.getColor(activity, R.color.GuessPhraseColor));
             }
         }.start();
     }
@@ -227,7 +230,7 @@ public class LettersRace {
 
         buttonGuessPhrase.setVisibility(View.VISIBLE);
         buttonGuessPhrase.setText("Odgaduję!");
-        buttonGuessPhrase.setBackgroundColor(Color.parseColor("#00cc00"));
+        buttonGuessPhrase.setBackgroundColor(ContextCompat.getColor(activity, R.color.GuessPhraseColor));
 
         keysTable.setVisibility(View.GONE);
         gameOverPanel.setVisibility(View.GONE);

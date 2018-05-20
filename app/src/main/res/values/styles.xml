@@ -17,8 +17,11 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <color name="AccentColor">#cc0000</color>
+    <color name="AccentColor">#0f69ad</color>
     <color name="PopupColor">@color/AccentColor</color>
+    <color name="TimerColor">#802b00</color>
+    <color name="GuessPhraseColor">#079927</color>
+    <color name="GuessFreezeColor">#f45642</color>
     <color name="PopupTextColor">#ffffff</color>
     <color name="ButtonTextColor">#ffffff</color>
     <color name="BlurbColor">#a0a0a0</color>
@@ -62,7 +65,7 @@
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:text">@string/game_title</item>
-        <item name="android:textColor">@color/AccentColor</item>
+        <item name="android:textStyle">bold</item>
         <item name="android:textSize">@dimen/TitleSize</item>
         <item name="android:layout_marginBottom">40dp</item>
     </style>
@@ -259,7 +262,7 @@
     <style name="GuessPhrase" parent="GameButton">
         <item name="android:layout_width">150dp</item>
         <item name="android:gravity">center</item>
-        <item name="android:background">#00cc00</item>
+        <item name="android:background">@color/GuessPhraseColor</item>
     </style>
 
     <style name="GuessConfirm">
@@ -281,7 +284,7 @@
     <style name="GuessTimer">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:textColor">@color/AccentColor</item>
+        <item name="android:textColor">@color/TimerColor</item>
         <item name="android:layout_marginTop">10dp</item>
         <item name="android:layout_marginBottom">10dp</item>
     </style>
