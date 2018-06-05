@@ -37,7 +37,8 @@ public class WordPositionHelper {
                 lettersInCurrentRow += (token.length() + 1);
             } else {
                 rows.add(currentRow);
-                currentRow = Collections.singletonList(token);
+                currentRow = new ArrayList<>();
+                currentRow.add(token);
                 lettersInCurrentRow = token.length();
             }
         }

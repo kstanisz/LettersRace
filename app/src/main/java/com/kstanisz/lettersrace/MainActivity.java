@@ -50,8 +50,9 @@ import org.apache.commons.lang3.SerializationUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
-public class MainActivity extends Activity implements View.OnClickListener{
+public class MainActivity extends Activity implements View.OnClickListener {
 
     /*
      * API INTEGRATION SECTION. This section contains the code that integrates
@@ -132,7 +133,7 @@ public class MainActivity extends Activity implements View.OnClickListener{
     }
 
     @Override
-    public void onClick(View view){
+    public void onClick(View view) {
         startSignInIntent();
     }
 
@@ -205,6 +206,7 @@ public class MainActivity extends Activity implements View.OnClickListener{
             case R.id.button_leave_game:
                 Log.d(TAG, "Leave room button clicked");
                 leaveRoom();
+                switchToMainScreen();
                 break;
         }
     }
@@ -416,11 +418,13 @@ public class MainActivity extends Activity implements View.OnClickListener{
             } else if (resultCode == GamesActivityResultCodes.RESULT_LEFT_ROOM) {
                 // player indicated that they want to leave the room
                 leaveRoom();
+                switchToMainScreen();
             } else if (resultCode == Activity.RESULT_CANCELED) {
                 // Dialog was cancelled (user pressed back key, for instance). In our game,
                 // this means leaving the room too. In more elaborate games, this could mean
                 // something else (like minimizing the waiting room UI).
                 leaveRoom();
+                switchToMainScreen();
             }
         }
         super.onActivityResult(requestCode, resultCode, intent);
@@ -530,6 +534,7 @@ public class MainActivity extends Activity implements View.OnClickListener{
     public boolean onKeyDown(int keyCode, KeyEvent e) {
         if (keyCode == KeyEvent.KEYCODE_BACK && mCurScreen == R.id.screen_game) {
             leaveRoom();
+            switchToMainScreen();
             return true;
         }
         return super.onKeyDown(keyCode, e);
@@ -549,8 +554,6 @@ public class MainActivity extends Activity implements View.OnClickListener{
                         }
                     });
             switchToScreen(R.id.screen_wait);
-        } else {
-            switchToMainScreen();
         }
     }
 
@@ -683,10 +686,6 @@ public class MainActivity extends Activity implements View.OnClickListener{
             //get participants and my ID:
             participants = room.getParticipants();
             myId = room.getParticipantId(playerId);
-            String creatorId = room.getCreatorId();
-            if (myId.equals(creatorId)) {
-                System.out.println("ZGADZA SIĘ");
-            }
 
             // save room ID if its not initialized in onRoomCreated() so we can leave cleanly before the game starts.
             if (roomId == null) {
@@ -816,9 +815,7 @@ public class MainActivity extends Activity implements View.OnClickListener{
         // via a call to leaveRoom(). If we get disconnected, we get onDisconnectedFromRoom()).
         @Override
         public void onLeftRoom(int statusCode, @NonNull String roomId) {
-            // we have left the room; return to main screen.
             Log.d(TAG, "onLeftRoom, code " + statusCode);
-            switchToMainScreen();
         }
     };
 
@@ -840,8 +837,12 @@ public class MainActivity extends Activity implements View.OnClickListener{
         multiplayerMode = multiplayer;
         switchToScreen(R.id.screen_game);
 
-        lettersRace = new LettersRace(this, roomId);
-        lettersRace.startGame();
+        boolean host = !multiplayer || isHost();
+
+        if (host) {
+            lettersRace = new LettersRace(this);
+            sendStartGameMessage();
+        }
     }
 
     // Reset game
@@ -870,6 +871,11 @@ public class MainActivity extends Activity implements View.OnClickListener{
             Message message = (Message) receivedMessage;
             MessageType messageType = message.getType();
             switch (messageType) {
+                case START_GAME: {
+                    Log.d(TAG, "Received start game message");
+                    receiveStartGameMessage(message);
+                    break;
+                }
                 case GUESS_STARTED: {
                     Log.d(TAG, "Received guess started message");
                     receiveGuessStartedMessage(senderId);
@@ -888,6 +894,34 @@ public class MainActivity extends Activity implements View.OnClickListener{
             }
         }
     };
+
+    private void sendStartGameMessage() {
+        Random random = new Random();
+        int min = 10000000, max = Integer.MAX_VALUE;
+        int hash = random.nextInt(max - min + 1) + min;
+
+        if (!multiplayerMode) {
+            lettersRace.startGame(hash);
+            return;
+        }
+
+        Message message = new Message(MessageType.START_GAME);
+        message.setValue(hash);
+        byte[] messageBuff = SerializationUtils.serialize(message);
+
+        for (Participant p : participants) {
+            if (myId.equals(p.getParticipantId())) {
+                lettersRace.startGame(hash);
+            }
+            sendMessage(messageBuff, p);
+        }
+    }
+
+    private void receiveStartGameMessage(Message message) {
+        int hash = message.getValue();
+        lettersRace = new LettersRace(this);
+        lettersRace.startGame(hash);
+    }
 
     private void sendGuessStartedMessage() {
         if (!lettersRace.canUserGuess()) {
@@ -1069,5 +1103,14 @@ public class MainActivity extends Activity implements View.OnClickListener{
             }
         }
         return null;
+    }
+
+    private boolean isHost() {
+        for (Participant p : participants) {
+            if (p.getParticipantId().compareTo(myId) < 0) {
+                return false;
+            }
+        }
+        return true;
     }
 }

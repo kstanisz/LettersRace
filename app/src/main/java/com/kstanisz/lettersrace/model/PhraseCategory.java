@@ -1,7 +1,7 @@
 package com.kstanisz.lettersrace.model;
 
 public enum PhraseCategory {
-    FILM("FILM"), DICTUM("POWIEDZENIA I PRZYSŁOWIA");
+    FILM("FILM"), POWIEDZENIA_I_PRZYSLOWIA("POWIEDZENIA I PRZYSŁOWIA");
 
     private final String name;
 

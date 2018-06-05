@@ -1,12 +1,12 @@
 package com.kstanisz.lettersrace.game;
 
-import android.graphics.Color;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 import com.kstanisz.lettersrace.MainActivity;
 import com.kstanisz.lettersrace.R;
 import com.kstanisz.lettersrace.data.PhraseData;
@@ -15,8 +15,10 @@ import com.kstanisz.lettersrace.model.Phrase;
 import com.kstanisz.lettersrace.model.WordPosition;
 import org.apache.commons.lang3.StringUtils;
 
-import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Stack;
 
 public class LettersRace {
 
@@ -29,7 +31,7 @@ public class LettersRace {
             {R.id.phrase_3_0, R.id.phrase_3_1, R.id.phrase_3_2, R.id.phrase_3_3, R.id.phrase_3_4, R.id.phrase_3_5, R.id.phrase_3_6, R.id.phrase_3_7, R.id.phrase_3_8, R.id.phrase_3_9, R.id.phrase_3_10, R.id.phrase_3_11, R.id.phrase_3_12}
     };
 
-    private final BigInteger hash;
+    private int hash;
 
     private final ArrayList<LetterPosition> letters = new ArrayList<>();
     private ArrayList<LetterPosition> allLetters = new ArrayList<>();
@@ -57,11 +59,8 @@ public class LettersRace {
     private CountDownTimer freezeTimer;
 
 
-    public LettersRace(MainActivity activity, String roomId) {
-        System.out.println("Room Id: " + roomId);
-
+    public LettersRace(MainActivity activity) {
         this.activity = activity;
-        this.hash = getHash(roomId);
         this.timerField = activity.findViewById(R.id.guess_timer);
         this.categoryField = activity.findViewById(R.id.phrase_category);
         this.buttonGuessPhrase = activity.findViewById(R.id.button_guess_phrase);
@@ -72,7 +71,8 @@ public class LettersRace {
         this.gameOverTextBlurb = activity.findViewById(R.id.game_over_text_blurb);
     }
 
-    public void startGame() {
+    public void startGame(int hash) {
+        this.hash = hash;
         this.phrase = getPhrase();
 
         List<String> words = phrase.getWords();
@@ -124,7 +124,7 @@ public class LettersRace {
 
         lettersLeft.addAll(letters);
 
-        guessingTimer = new CountDownTimer(30000, 1000) {
+        guessingTimer = new CountDownTimer(45000, 1000) {
             public void onTick(long millisUntilFinished) {
                 if (!guessing) {
                     return;
@@ -134,6 +134,7 @@ public class LettersRace {
             }
 
             public void onFinish() {
+                Toast.makeText(activity, "Czas minął!", Toast.LENGTH_LONG).show();
                 cancelGuess();
             }
         }.start();
@@ -145,6 +146,7 @@ public class LettersRace {
 
         boolean correct = checkIfCorrectPhrase();
         if (!correct) {
+            Toast.makeText(activity, "Błędne hasło!", Toast.LENGTH_LONG).show();
             cancelGuess();
             return;
         }
@@ -227,6 +229,8 @@ public class LettersRace {
 
         guessInfo.setText("");
         guessInfo.setVisibility(View.GONE);
+
+        timerField.setText("");
 
         buttonGuessPhrase.setVisibility(View.VISIBLE);
         buttonGuessPhrase.setText("Odgaduję!");
@@ -317,11 +321,11 @@ public class LettersRace {
 
     private Phrase getPhrase() {
         int total = PhraseData.data.size();
-        return PhraseData.data.get(hash.mod(BigInteger.valueOf(total)).intValue());
+        return PhraseData.data.get(hash % total);
     }
 
     private void showOneLetter() {
-        LetterPosition letterToShow = letters.remove(hash.mod(BigInteger.valueOf(letters.size())).intValue());
+        LetterPosition letterToShow = letters.remove(hash % letters.size());
         TextView field = activity.findViewById(letterToShow.getRid());
         String fullText = phrase.getText();
         field.setText(Character.toString(fullText.charAt(letterToShow.getIndex())));
@@ -358,21 +362,5 @@ public class LettersRace {
         double pressedLettersCount = pressedLetters.size();
 
         return Math.round((pressedLettersCount / allLettersCount) * 100.0);
-    }
-
-    private BigInteger getHash(String str) {
-        if (str == null) {
-            Random random = new Random();
-            int min = 10000000, max = Integer.MAX_VALUE;
-            int hash = random.nextInt(max - min + 1) + min;
-            return BigInteger.valueOf(hash);
-        }
-
-        str = str.substring(0, 10);
-        StringBuilder sb = new StringBuilder();
-        for (char c : str.toCharArray()) {
-            sb.append((int) c);
-        }
-        return new BigInteger(sb.toString());
     }
 }

@@ -29,6 +29,12 @@
         <com.google.android.gms.common.SignInButton android:id="@+id/button_sign_in" style="@style/SignInButton"/>
     </LinearLayout>
 
+    <!-- INVITATION POPUP -->
+    <LinearLayout android:id="@+id/invitation_popup" style="@style/InvPopup">
+        <TextView android:id="@+id/incoming_invitation_text" style="@style/InvPopupText" />
+        <Button android:id="@+id/button_accept_popup_invitation" style="@style/InvPopupButton" android:text="@string/accept_popup_invite" android:onClick="onMenuClick" />
+    </LinearLayout>
+
     <!-- MAIN SCREEN -->
     <LinearLayout android:id="@+id/screen_main" style="@style/LLScreen">
         <TextView style="@style/GameTitle" />
@@ -41,12 +47,6 @@
         <Button android:id="@+id/button_see_invitations" style="@style/MainScreenButton" android:text="@string/see_invitations" android:onClick="onMenuClick"/>
         <TextView style="@style/MainScreenButtonBlurb" android:text="@string/see_invitations_explanation" />
         <Button android:id="@+id/button_sign_out" style="@style/SignOutButton" android:text="@string/sign_out" android:onClick="onMenuClick"/>
-    </LinearLayout>
-
-    <!-- INVITATION POPUP -->
-    <LinearLayout android:id="@+id/invitation_popup" style="@style/InvPopup">
-        <TextView android:id="@+id/incoming_invitation_text" style="@style/InvPopupText" />
-        <Button android:id="@+id/button_accept_popup_invitation" style="@style/InvPopupButton" android:text="@string/accept_popup_invite" android:onClick="onMenuClick" />
     </LinearLayout>
 
     <!-- "PLEASE WAIT" SCREEN -->
