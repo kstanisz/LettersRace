@@ -32,7 +32,7 @@
     <string name="sign_out">Wyloguj się</string>
     <string name="please_wait">Proszę czekać&#8230;</string>
     <string name="game_problem">Wystąpił nieoczekiwany błąd.</string>
-    <string name="is_inviting_you">zaprasza Cię do wspólnej rozgrywki!</string>
+    <string name="is_inviting_you">zaprasza Cię do gry!</string>
     <string name="signin_other_error">Wystąpił problem z zalogowaniem się. Spróbuj ponownie później.</string>
     <string name="status_exception_error">%1$s (status %2$d). %3$s.</string>
 

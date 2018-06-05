@@ -61,6 +61,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
     private final static String TAG = "LettersRace";
 
+    private Activity activity = this;
+
     // Request codes for the UIs that we show with startActivityForResult:
     private final static int RC_SELECT_PLAYERS = 10000;
     private final static int RC_INVITATION_INBOX = 10001;
@@ -532,7 +534,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
     // Handle back key to make sure we cleanly leave a game if we are in the middle of one
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent e) {
-        if (keyCode == KeyEvent.KEYCODE_BACK && mCurScreen == R.id.screen_game) {
+        if (keyCode == KeyEvent.KEYCODE_BACK && (mCurScreen == R.id.screen_game || mCurScreen == R.id.screen_wait)) {
             leaveRoom();
             switchToMainScreen();
             return true;
@@ -583,10 +585,13 @@ public class MainActivity extends Activity implements View.OnClickListener {
             // incomingInvitationId
             // and show the popup on the screen.
             incomingInvitationId = invitation.getInvitationId();
-            ((TextView) findViewById(R.id.incoming_invitation_text)).setText(
-                    invitation.getInviter().getDisplayName() + " " +
-                            getString(R.string.is_inviting_you));
-            switchToScreen(mCurScreen); // This will show the invitation popup
+            String invitationText = invitation.getInviter().getDisplayName() + " " + getString(R.string.is_inviting_you);
+            ((TextView) findViewById(R.id.incoming_invitation_text)).setText(invitationText);
+            if (mCurScreen == R.id.screen_game) {
+                Toast.makeText(activity, invitationText, Toast.LENGTH_LONG).show();
+            } else {
+                switchToScreen(mCurScreen); // This will show the invitation popup
+            }
         }
 
         @Override
@@ -1063,8 +1068,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
             // if in multiplayer, only show invitation on main screen
             showInvPopup = (mCurScreen == R.id.screen_main);
         } else {
-            // single-player: show on main screen and gameplay screen
-            showInvPopup = (mCurScreen == R.id.screen_main || mCurScreen == R.id.screen_game);
+            showInvPopup = (mCurScreen == R.id.screen_main);
         }
         findViewById(R.id.invitation_popup).setVisibility(showInvPopup ? View.VISIBLE : View.GONE);
     }

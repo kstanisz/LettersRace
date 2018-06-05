@@ -39,13 +39,9 @@
     <LinearLayout android:id="@+id/screen_main" style="@style/LLScreen">
         <TextView style="@style/GameTitle" />
         <Button android:id="@+id/button_single_player_2" style="@style/MainScreenButton" android:text="@string/single_player" android:onClick="onMenuClick" />
-        <TextView style="@style/MainScreenButtonBlurb" android:text="@string/single_player_explanation" />
         <Button android:id="@+id/button_quick_game" style="@style/MainScreenButton" android:text="@string/quick_game" android:onClick="onMenuClick"/>
-        <TextView style="@style/MainScreenButtonBlurb" android:text="@string/quick_game_explanation" />
         <Button android:id="@+id/button_invite_players" style="@style/MainScreenButton" android:text="@string/invite_players" android:onClick="onMenuClick"/>
-        <TextView style="@style/MainScreenButtonBlurb" android:text="@string/invite_players_explanation" />
         <Button android:id="@+id/button_see_invitations" style="@style/MainScreenButton" android:text="@string/see_invitations" android:onClick="onMenuClick"/>
-        <TextView style="@style/MainScreenButtonBlurb" android:text="@string/see_invitations_explanation" />
         <Button android:id="@+id/button_sign_out" style="@style/SignOutButton" android:text="@string/sign_out" android:onClick="onMenuClick"/>
     </LinearLayout>
 
