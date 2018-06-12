@@ -53,12 +53,6 @@ import java.util.List;
 import java.util.Random;
 
 public class MainActivity extends Activity implements View.OnClickListener {
-
-    /*
-     * API INTEGRATION SECTION. This section contains the code that integrates
-     * the game with the Google Play game services API.
-     */
-
     private final static String TAG = "LettersRace";
 
     private Activity activity = this;
@@ -118,9 +112,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
     protected void onResume() {
         super.onResume();
         Log.d(TAG, "onResume()");
-
-        // Since the state of the signed in user can change when the activity is not active
-        // it is recommended to try and sign in silently from when the app resumes.
         signInSilently();
     }
 
@@ -198,7 +189,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
                         startSinglePlayerGame();
                         break;
                     case MULTIPLAYER_FRIENDS:
-                        invitePlayers();
+                        startQuickGame();
                         break;
                     case MULTIPLAYER_RANDOM:
                         startQuickGame();
@@ -229,7 +220,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private void startQuickGame() {
         gameMode = GameMode.MULTIPLAYER_RANDOM;
 
-        // quick-start a game with 1 randomly selected opponent
         final int MIN_OPPONENTS = 1, MAX_OPPONENTS = 1;
         Bundle autoMatchCriteria = RoomConfig.createAutoMatchCriteria(MIN_OPPONENTS, MAX_OPPONENTS, 0);
         switchToScreen(R.id.screen_wait);
@@ -248,7 +238,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
         gameMode = GameMode.MULTIPLAYER_FRIENDS;
         switchToScreen(R.id.screen_wait);
 
-        // show list of invitable players
         realTimeMultiplayerClient.getSelectOpponentsIntent(1, 3).addOnSuccessListener(
                 new OnSuccessListener<Intent>() {
                     @Override
@@ -263,7 +252,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
         gameMode = GameMode.MULTIPLAYER_FRIENDS;
         switchToScreen(R.id.screen_wait);
 
-        // show list of pending invitations
         invitationsClient.getInvitationInboxIntent().addOnSuccessListener(
                 new OnSuccessListener<Intent>() {
                     @Override
@@ -274,19 +262,10 @@ public class MainActivity extends Activity implements View.OnClickListener {
         ).addOnFailureListener(createFailureListener("There was a problem getting the inbox."));
     }
 
-    /**
-     * Start a sign in activity.  To properly handle the result, call tryHandleSignInResult from
-     * your Activity's onActivityResult function
-     */
     private void startSignInIntent() {
         startActivityForResult(googleSignInClient.getSignInIntent(), RC_SIGN_IN);
     }
 
-    /**
-     * Try to sign in without displaying dialogs to the user.
-     * <p>
-     * If the user has already signed in previously, it will not show dialog.
-     */
     private void signInSilently() {
         Log.d(TAG, "signInSilently()");
 
@@ -324,13 +303,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 });
     }
 
-    /**
-     * Since a lot of the operations use tasks, we can use a common handler for whenever one fails.
-     *
-     * @param exception The exception to evaluate.  Will try to display a more descriptive reason for the exception.
-     * @param details   Will display alongside the exception if you wish to provide more details for why the exception
-     *                  happened
-     */
     private void handleException(Exception exception, String details) {
         int status = 0;
 
@@ -403,37 +375,25 @@ public class MainActivity extends Activity implements View.OnClickListener {
                         .show();
             }
         } else if (requestCode == RC_SELECT_PLAYERS) {
-            // we got the result from the "select players" UI -- ready to create the room
             handleSelectPlayersResult(resultCode, intent);
 
         } else if (requestCode == RC_INVITATION_INBOX) {
-            // we got the result from the "select invitation" UI (invitation inbox). We're
-            // ready to accept the selected invitation:
             handleInvitationInboxResult(resultCode, intent);
 
         } else if (requestCode == RC_WAITING_ROOM) {
-            // we got the result from the "waiting room" UI.
             if (resultCode == Activity.RESULT_OK) {
-                // ready to start playing
                 Log.d(TAG, "Starting game (waiting room returned OK).");
                 startGame(true);
             } else if (resultCode == GamesActivityResultCodes.RESULT_LEFT_ROOM) {
-                // player indicated that they want to leave the room
                 leaveRoom();
                 switchToMainScreen();
             } else if (resultCode == Activity.RESULT_CANCELED) {
-                // Dialog was cancelled (user pressed back key, for instance). In our game,
-                // this means leaving the room too. In more elaborate games, this could mean
-                // something else (like minimizing the waiting room UI).
                 leaveRoom();
                 switchToMainScreen();
             }
         }
         super.onActivityResult(requestCode, resultCode, intent);
     }
-
-    // Handle the result of the "Select players UI" we launched when the user clicked the
-    // "Invite friends" button. We react by creating a room with those players.
 
     private void handleSelectPlayersResult(int response, Intent data) {
         if (response != Activity.RESULT_OK) {
@@ -444,11 +404,9 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
         Log.d(TAG, "Select players UI succeeded.");
 
-        // get the invitee list
         final ArrayList<String> invitees = data.getStringArrayListExtra(Games.EXTRA_PLAYER_IDS);
         Log.d(TAG, "Invitee count: " + invitees.size());
 
-        // get the automatch criteria
         Bundle autoMatchCriteria = null;
         int minAutoMatchPlayers = data.getIntExtra(Multiplayer.EXTRA_MIN_AUTOMATCH_PLAYERS, 0);
         int maxAutoMatchPlayers = data.getIntExtra(Multiplayer.EXTRA_MAX_AUTOMATCH_PLAYERS, 0);
@@ -458,7 +416,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
             Log.d(TAG, "Automatch criteria: " + autoMatchCriteria);
         }
 
-        // create the room
         Log.d(TAG, "Creating room...");
         switchToScreen(R.id.screen_wait);
         keepScreenOn();
@@ -473,8 +430,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
         Log.d(TAG, "Room created, waiting for it to be ready...");
     }
 
-    // Handle the result of the invitation inbox UI, where the player can pick an invitation
-    // to accept. We react by accepting the selected invitation, if any.
     private void handleInvitationInboxResult(int response, Intent data) {
         if (response != Activity.RESULT_OK) {
             Log.w(TAG, "*** invitation inbox UI cancelled, " + response);
@@ -485,15 +440,12 @@ public class MainActivity extends Activity implements View.OnClickListener {
         Log.d(TAG, "Invitation inbox UI succeeded.");
         Invitation invitation = data.getExtras().getParcelable(Multiplayer.EXTRA_INVITATION);
 
-        // accept invitation
         if (invitation != null) {
             acceptInviteToRoom(invitation.getInvitationId());
         }
     }
 
-    // Accept the given invitation.
     private void acceptInviteToRoom(String invitationId) {
-        // accept the invitation
         Log.d(TAG, "Accepting invitation: " + invitationId);
 
         roomConfig = RoomConfig.builder(roomUpdateCallback)
@@ -515,15 +467,12 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 });
     }
 
-    // Activity is going to the background. We have to leave the current room.
     @Override
     public void onStop() {
         Log.d(TAG, "**** got onStop");
 
-        // if we're in a room, leave it.
         leaveRoom();
 
-        // stop trying to keep the screen on
         stopKeepingScreenOn();
 
         switchToMainScreen();
@@ -531,7 +480,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
         super.onStop();
     }
 
-    // Handle back key to make sure we cleanly leave a game if we are in the middle of one
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent e) {
         if (keyCode == KeyEvent.KEYCODE_BACK && (mCurScreen == R.id.screen_game || mCurScreen == R.id.screen_wait)) {
@@ -542,35 +490,32 @@ public class MainActivity extends Activity implements View.OnClickListener {
         return super.onKeyDown(keyCode, e);
     }
 
-    // Leave the room.
     private void leaveRoom() {
         Log.d(TAG, "Leaving room.");
         stopKeepingScreenOn();
         if (roomId != null) {
-            realTimeMultiplayerClient.leave(roomConfig, roomId)
-                    .addOnCompleteListener(new OnCompleteListener<Void>() {
-                        @Override
-                        public void onComplete(@NonNull Task<Void> task) {
-                            roomId = null;
-                            roomConfig = null;
-                        }
-                    });
+            try {
+                realTimeMultiplayerClient.leave(roomConfig, roomId)
+                        .addOnCompleteListener(new OnCompleteListener<Void>() {
+                            @Override
+                            public void onComplete(@NonNull Task<Void> task) {
+                                roomId = null;
+                                roomConfig = null;
+                            }
+                        });
+            }catch(Exception e){
+                Log.d(TAG, "Error while leaving room");
+            }
             switchToScreen(R.id.screen_wait);
         }
     }
 
-    // Show the waiting room UI to track the progress of other players as they enter the
-    // room and get connected.
     private void showWaitingRoom(Room room) {
-        // minimum number of players required for our game
-        // For simplicity, we require everyone to join the game before we start it
-        // (this is signaled by Integer.MAX_VALUE).
         final int MIN_PLAYERS = Integer.MAX_VALUE;
         realTimeMultiplayerClient.getWaitingRoomIntent(room, MIN_PLAYERS)
                 .addOnSuccessListener(new OnSuccessListener<Intent>() {
                     @Override
                     public void onSuccess(Intent intent) {
-                        // show waiting room UI
                         startActivityForResult(intent, RC_WAITING_ROOM);
                     }
                 })
@@ -578,19 +523,15 @@ public class MainActivity extends Activity implements View.OnClickListener {
     }
 
     private InvitationCallback invitationCallback = new InvitationCallback() {
-        // Called when we get an invitation to play a game. We react by showing that to the user.
         @Override
         public void onInvitationReceived(@NonNull Invitation invitation) {
-            // We got an invitation to play a game! So, store it in
-            // incomingInvitationId
-            // and show the popup on the screen.
             incomingInvitationId = invitation.getInvitationId();
             String invitationText = invitation.getInviter().getDisplayName() + " " + getString(R.string.is_inviting_you);
             ((TextView) findViewById(R.id.incoming_invitation_text)).setText(invitationText);
             if (mCurScreen == R.id.screen_game) {
                 Toast.makeText(activity, invitationText, Toast.LENGTH_LONG).show();
             } else {
-                switchToScreen(mCurScreen); // This will show the invitation popup
+                switchToScreen(mCurScreen);
             }
         }
 
@@ -599,19 +540,13 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
             if (incomingInvitationId.equals(invitationId) && incomingInvitationId != null) {
                 incomingInvitationId = null;
-                switchToScreen(mCurScreen); // This will hide the invitation popup
+                switchToScreen(mCurScreen);
             }
         }
     };
 
-    /*
-     * CALLBACKS SECTION. This section shows how we implement the several games
-     * API callbacks.
-     */
-
     private String playerId;
 
-    // The currently signed in account, used to check the account has changed outside of this activity when resuming.
     private GoogleSignInAccount signedInAccount = null;
 
     private void onConnected(GoogleSignInAccount googleSignInAccount) {
@@ -638,12 +573,9 @@ public class MainActivity extends Activity implements View.OnClickListener {
                     .addOnFailureListener(createFailureListener("There was a problem getting the player id!"));
         }
 
-        // register listener so we are notified if we receive an invitation to play
-        // while we are in the game
+
         invitationsClient.registerInvitationCallback(invitationCallback);
 
-        // get the invitation from the connection hint
-        // Retrieve the TurnBasedMatch from the connectionHint
         GamesClient gamesClient = Games.getGamesClient(MainActivity.this, googleSignInAccount);
         gamesClient.getActivationHint()
                 .addOnSuccessListener(new OnSuccessListener<Bundle>() {
@@ -682,38 +614,27 @@ public class MainActivity extends Activity implements View.OnClickListener {
     }
 
     private RoomStatusUpdateCallback roomStatusUpdateCallback = new RoomStatusUpdateCallback() {
-        // Called when we are connected to the room. We're not ready to play yet! (maybe not everybody
-        // is connected yet).
         @Override
         public void onConnectedToRoom(Room room) {
             Log.d(TAG, "onConnectedToRoom.");
 
-            //get participants and my ID:
             participants = room.getParticipants();
             myId = room.getParticipantId(playerId);
 
-            // save room ID if its not initialized in onRoomCreated() so we can leave cleanly before the game starts.
             if (roomId == null) {
                 roomId = room.getRoomId();
             }
 
-            // print out the list of participants (for debug purposes)
             Log.d(TAG, "Room ID: " + roomId);
             Log.d(TAG, "My ID " + myId);
             Log.d(TAG, "<< CONNECTED TO ROOM>>");
         }
 
-        // Called when we get disconnected from the room. We return to the main screen.
         @Override
         public void onDisconnectedFromRoom(Room room) {
             updateRoom(room);
         }
 
-
-        // We treat most of the room update callbacks in the same way: we update our list of
-        // participants and update the display. In a real game we would also have to check if that
-        // change requires some action like removing the corresponding player avatar from the screen,
-        // etc.
         @Override
         public void onPeerDeclined(Room room, @NonNull List<String> arg1) {
             updateRoom(room);
@@ -763,7 +684,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
         }
     };
 
-    // Show error message about game being cancelled and return to main screen.
     private void showGameError() {
         new AlertDialog.Builder(this)
                 .setMessage(getString(R.string.game_problem))
@@ -774,7 +694,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
     private RoomUpdateCallback roomUpdateCallback = new RoomUpdateCallback() {
 
-        // Called when room has been created
         @Override
         public void onRoomCreated(int statusCode, Room room) {
             Log.d(TAG, "onRoomCreated(" + statusCode + ", " + room + ")");
@@ -784,14 +703,11 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 return;
             }
 
-            // save room ID so we can leave cleanly before the game starts.
             roomId = room.getRoomId();
 
-            // show the waiting room UI
             showWaitingRoom(room);
         }
 
-        // Called when room is fully connected.
         @Override
         public void onRoomConnected(int statusCode, Room room) {
             Log.d(TAG, "onRoomConnected(" + statusCode + ", " + room + ")");
@@ -812,12 +728,9 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 return;
             }
 
-            // show the waiting room UI
             showWaitingRoom(room);
         }
 
-        // Called when we've successfully left the room (this happens a result of voluntarily leaving
-        // via a call to leaveRoom(). If we get disconnected, we get onDisconnectedFromRoom()).
         @Override
         public void onLeftRoom(int statusCode, @NonNull String roomId) {
             Log.d(TAG, "onLeftRoom, code " + statusCode);
@@ -828,16 +741,12 @@ public class MainActivity extends Activity implements View.OnClickListener {
         if (room != null) {
             participants = room.getParticipants();
         }
-/*        if (participants != null) {
-            updatePeerScoresDisplay();
-        }*/
     }
 
     /*
      * GAME LOGIC SECTION. Methods that implement the game's rules.
      */
 
-    // Start the gameplay phase of the game.
     private void startGame(boolean multiplayer) {
         multiplayerMode = multiplayer;
         switchToScreen(R.id.screen_game);
@@ -1022,7 +931,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
         if (participant.getStatus() != Participant.STATUS_JOINED) {
             return;
         }
-        // final score notification must be sent via reliable message
         realTimeMultiplayerClient.sendReliableMessage(buffer,
                 roomId, participant.getParticipantId(), new RealTimeMultiplayerClient.ReliableMessageSentCallback() {
                     @Override

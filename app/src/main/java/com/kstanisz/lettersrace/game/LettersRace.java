@@ -123,6 +123,12 @@ public class LettersRace {
         buttonGuessPhrase.setVisibility(View.GONE);
 
         lettersLeft.addAll(letters);
+        if(!lettersLeft.isEmpty()){
+            LetterPosition nextLetter = lettersLeft.getFirst();
+            int rid = nextLetter.getRid();
+            TextView field = activity.findViewById(rid);
+            field.setBackgroundResource(R.drawable.phrase_focus_back);
+        }
 
         guessingTimer = new CountDownTimer(45000, 1000) {
             public void onTick(long millisUntilFinished) {
@@ -144,6 +150,8 @@ public class LettersRace {
         guessing = false;
         guessingTimer.cancel();
 
+        resetFocus();
+
         boolean correct = checkIfCorrectPhrase();
         if (!correct) {
             Toast.makeText(activity, "Błędne hasło!", Toast.LENGTH_LONG).show();
@@ -160,6 +168,8 @@ public class LettersRace {
     public void cancelGuess() {
         guessing = false;
         guessingTimer.cancel();
+
+        resetFocus();
 
         keysTable.setVisibility(View.GONE);
         buttonGuessPhrase.setVisibility(View.VISIBLE);
@@ -240,6 +250,14 @@ public class LettersRace {
         gameOverPanel.setVisibility(View.GONE);
     }
 
+    private void resetFocus(){
+        for(LetterPosition letter : lettersLeft){
+            int rid = letter.getRid();
+            TextView field = activity.findViewById(rid);
+            field.setBackgroundResource(R.drawable.phrase_letter_back);
+        }
+    }
+
     public void endGame(boolean success, String winnerName) {
         buttonGuessPhrase.setVisibility(View.GONE);
         guessInfo.setText("");
@@ -268,21 +286,29 @@ public class LettersRace {
     }
 
     public void letterPressed(String letter) {
-        if (lettersLeft.isEmpty()) {
+        if (letter.equals("\u232b")) {
+            removeLastPressedLetter();
             return;
         }
 
-        if (letter.equals("\u232b")) {
-            removeLastPressedLetter();
+        if (lettersLeft.isEmpty()) {
             return;
         }
 
         LetterPosition positionToShow = lettersLeft.removeFirst();
         int rid = positionToShow.getRid();
         TextView field = activity.findViewById(rid);
+        field.setBackgroundResource(R.drawable.phrase_letter_back);
         field.setText(letter);
 
         pressedLetters.push(positionToShow);
+
+        if(!lettersLeft.isEmpty()){
+            LetterPosition nextLetter = lettersLeft.getFirst();
+            rid = nextLetter.getRid();
+            field = activity.findViewById(rid);
+            field.setBackgroundResource(R.drawable.phrase_focus_back);
+        }
     }
 
     private void removeLastPressedLetter() {
@@ -290,10 +316,18 @@ public class LettersRace {
             return;
         }
 
+        if(!lettersLeft.isEmpty()){
+            LetterPosition nextLetter = lettersLeft.getFirst();
+            int rid = nextLetter.getRid();
+            TextView field = activity.findViewById(rid);
+            field.setBackgroundResource(R.drawable.phrase_letter_back);
+        }
+
         LetterPosition lastPressedLetter = pressedLetters.pop();
         int rid = lastPressedLetter.getRid();
         TextView field = activity.findViewById(rid);
         field.setText("");
+        field.setBackgroundResource(R.drawable.phrase_focus_back);
 
         lettersLeft.addFirst(lastPressedLetter);
     }
